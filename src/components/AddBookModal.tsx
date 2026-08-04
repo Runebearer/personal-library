@@ -94,6 +94,8 @@ export function AddBookModal({
       metadata: {
         isbn,
         title: '',
+        subtitle: null,
+        tome: null,
         authors: [],
         coverUrl: null,
         genre: null,

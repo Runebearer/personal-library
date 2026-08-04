@@ -17,20 +17,44 @@ export function BookDetailModal({
   onMoveToShelf?: () => void
 }) {
   const [title, setTitle] = useState(metadata.title)
-  const [authors, setAuthors] = useState(metadata.authors.join(', '))
+  const [showSubtitle, setShowSubtitle] = useState(Boolean(metadata.subtitle))
+  const [subtitle, setSubtitle] = useState(metadata.subtitle ?? '')
+  const [showTome, setShowTome] = useState(Boolean(metadata.tome))
+  const [tome, setTome] = useState(metadata.tome ?? '')
+  const [authors, setAuthors] = useState(metadata.authors.length > 0 ? metadata.authors : [''])
   const [genre, setGenre] = useState(metadata.genre ?? '')
   const [synopsis, setSynopsis] = useState(metadata.synopsis ?? '')
   const [rating, setRating] = useState(metadata.rating)
+  const [error, setError] = useState<string | null>(null)
+
+  function handleAuthorChange(index: number, value: string) {
+    setAuthors((prev) => prev.map((a, i) => (i === index ? value : a)))
+  }
+
+  function handleAddAuthor() {
+    setAuthors((prev) => [...prev, ''])
+  }
+
+  function handleRemoveAuthor(index: number) {
+    setAuthors((prev) => prev.filter((_, i) => i !== index))
+  }
 
   function handleConfirm() {
+    const trimmedTitle = title.trim()
+    const authorsList = authors.map((a) => a.trim()).filter(Boolean)
+
+    if (!trimmedTitle || authorsList.length === 0 || !genre) {
+      setError("Le titre, l'auteur et le genre sont obligatoires.")
+      return
+    }
+
     onConfirm({
       ...metadata,
-      title: title.trim() || 'Titre inconnu',
-      authors: authors
-        .split(',')
-        .map((a) => a.trim())
-        .filter(Boolean),
-      genre: genre.trim() || null,
+      title: trimmedTitle,
+      subtitle: subtitle.trim() || null,
+      tome: tome.trim() || null,
+      authors: authorsList,
+      genre,
       synopsis: synopsis.trim() || null,
       rating,
     })
@@ -54,27 +78,90 @@ export function BookDetailModal({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Titre du livre"
+              placeholder="Titre du livre *"
               className="rounded-lg border border-gray-300 px-3 py-2 font-medium text-gray-900"
             />
-            <input
-              type="text"
-              value={authors}
-              onChange={(e) => setAuthors(e.target.value)}
-              placeholder="Auteur(s), séparés par une virgule"
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-500"
-            />
+
+            {showSubtitle ? (
+              <input
+                type="text"
+                autoFocus
+                value={subtitle}
+                onChange={(e) => setSubtitle(e.target.value)}
+                placeholder="Sous-titre"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowSubtitle(true)}
+                className="self-start text-sm text-gray-500"
+              >
+                + Sous-titre
+              </button>
+            )}
+
+            {showTome ? (
+              <input
+                type="text"
+                autoFocus
+                value={tome}
+                onChange={(e) => setTome(e.target.value)}
+                placeholder="Tome (ex. 3)"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowTome(true)}
+                className="self-start text-sm text-gray-500"
+              >
+                + Tome
+              </button>
+            )}
           </div>
         </div>
 
+        <div className="flex flex-col gap-2">
+          <span className="text-sm text-gray-600">Auteur(s) *</span>
+          {authors.map((author, index) => (
+            <div key={index} className="flex gap-2">
+              <input
+                type="text"
+                value={author}
+                onChange={(e) => handleAuthorChange(index, e.target.value)}
+                placeholder={`Auteur ${index + 1}`}
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
+              />
+              {index > 0 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveAuthor(index)}
+                  className="px-2 text-gray-400"
+                  aria-label={`Retirer l'auteur ${index + 1}`}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={handleAddAuthor}
+            className="self-start text-sm text-gray-500"
+          >
+            + Auteur
+          </button>
+        </div>
+
         <label className="flex flex-col gap-1 text-sm text-gray-600">
-          Genre
+          Genre *
           <select
             value={genre}
             onChange={(e) => setGenre(e.target.value)}
             className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
           >
-            <option value="">Sans genre</option>
+            <option value="">Choisir un genre</option>
             {GENRE_LIST.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -98,6 +185,8 @@ export function BookDetailModal({
           Ma note
           <RatingStars rating={rating} onChange={setRating} />
         </div>
+
+        {error && <p className="text-center text-sm text-red-600">{error}</p>}
 
         <button
           type="button"

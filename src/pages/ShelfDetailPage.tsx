@@ -72,6 +72,8 @@ export function ShelfDetailPage() {
     if (!user || !shelfId || !selectedBook) return
     await updateBook(user.uid, shelfId, selectedBook.id, {
       title: metadata.title,
+      subtitle: metadata.subtitle,
+      tome: metadata.tome,
       authors: metadata.authors,
       genre: metadata.genre,
       synopsis: metadata.synopsis,

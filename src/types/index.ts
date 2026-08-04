@@ -12,6 +12,8 @@ export interface Book {
   id: string
   isbn: string
   title: string
+  subtitle: string | null
+  tome: string | null
   authors: string[]
   coverUrl: string | null
   genre: string | null
@@ -23,6 +25,8 @@ export interface Book {
 export interface BookMetadata {
   isbn: string
   title: string
+  subtitle: string | null
+  tome: string | null
   authors: string[]
   coverUrl: string | null
   genre: string | null

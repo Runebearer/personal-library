@@ -102,6 +102,8 @@ export function subscribeToBooks(
           id: d.id,
           isbn: data.isbn as string,
           title: data.title as string,
+          subtitle: (data.subtitle as string | null) ?? null,
+          tome: (data.tome as string | null) ?? null,
           authors: (data.authors as string[]) ?? [],
           coverUrl: (data.coverUrl as string | null) ?? null,
           genre: (data.genre as string | null) ?? null,
@@ -125,7 +127,9 @@ export function updateBook(
   uid: string,
   shelfId: string,
   bookId: string,
-  patch: Partial<Pick<Book, 'title' | 'authors' | 'genre' | 'synopsis' | 'rating'>>,
+  patch: Partial<
+    Pick<Book, 'title' | 'subtitle' | 'tome' | 'authors' | 'genre' | 'synopsis' | 'rating'>
+  >,
 ) {
   return updateDoc(doc(db, 'users', uid, 'shelves', shelfId, 'books', bookId), patch)
 }
@@ -149,6 +153,8 @@ export async function moveBook(
   batch.set(doc(booksRef(uid, toShelfId)), {
     isbn: data.isbn,
     title: data.title,
+    subtitle: data.subtitle ?? null,
+    tome: data.tome ?? null,
     authors: data.authors,
     coverUrl: data.coverUrl,
     genre: data.genre,

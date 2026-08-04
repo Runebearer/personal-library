@@ -3,6 +3,7 @@ import { normalizeGenre } from './genre'
 
 interface OpenLibraryEntry {
   title?: string
+  subtitle?: string
   authors?: { name: string }[]
   cover?: { small?: string; medium?: string; large?: string }
   subjects?: { name: string }[]
@@ -13,6 +14,7 @@ interface OpenLibraryEntry {
 interface GoogleBooksVolume {
   volumeInfo?: {
     title?: string
+    subtitle?: string
     authors?: string[]
     categories?: string[]
     description?: string
@@ -33,6 +35,8 @@ async function fetchFromOpenLibrary(isbn: string): Promise<BookMetadata | null> 
     return {
       isbn,
       title: entry.title ?? 'Titre inconnu',
+      subtitle: entry.subtitle ?? null,
+      tome: null,
       authors: entry.authors?.map((a) => a.name) ?? [],
       coverUrl: entry.cover?.medium ?? entry.cover?.large ?? entry.cover?.small ?? null,
       genre: normalizeGenre(entry.subjects?.map((s) => s.name) ?? []),
@@ -59,6 +63,8 @@ async function fetchFromGoogleBooks(isbn: string): Promise<BookMetadata | null> 
     return {
       isbn,
       title: info.title ?? 'Titre inconnu',
+      subtitle: info.subtitle ?? null,
+      tome: null,
       authors: info.authors ?? [],
       coverUrl: thumbnail ? thumbnail.replace(/^http:/, 'https:') : null,
       genre: normalizeGenre(info.categories ?? []),
