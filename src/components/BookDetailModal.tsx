@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { RatingStars } from './RatingStars'
+import { GENRE_LIST } from '../lib/genre'
 import type { BookMetadata } from '../types'
 
 export function BookDetailModal({
@@ -66,13 +67,18 @@ export function BookDetailModal({
 
         <label className="flex flex-col gap-1 text-sm text-gray-600">
           Genre
-          <input
-            type="text"
+          <select
             value={genre}
             onChange={(e) => setGenre(e.target.value)}
-            placeholder="Ex. Science-fiction"
             className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
-          />
+          >
+            <option value="">Sans genre</option>
+            {GENRE_LIST.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="flex flex-col gap-1 text-sm text-gray-600">

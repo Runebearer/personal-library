@@ -1,4 +1,5 @@
 import type { BookMetadata } from '../types'
+import { normalizeGenre } from './genre'
 
 interface OpenLibraryEntry {
   title?: string
@@ -35,7 +36,7 @@ async function fetchFromOpenLibrary(isbn: string): Promise<BookMetadata | null> 
     title: entry.title ?? 'Titre inconnu',
     authors: entry.authors?.map((a) => a.name) ?? [],
     coverUrl: entry.cover?.medium ?? entry.cover?.large ?? entry.cover?.small ?? null,
-    genre: entry.subjects?.[0]?.name ?? null,
+    genre: normalizeGenre(entry.subjects?.map((s) => s.name) ?? []),
     synopsis: entry.excerpts?.[0]?.text ?? entry.notes ?? null,
     rating: 0,
   }
@@ -59,7 +60,7 @@ async function fetchFromGoogleBooks(isbn: string): Promise<BookMetadata | null> 
     title: info.title ?? 'Titre inconnu',
     authors: info.authors ?? [],
     coverUrl: thumbnail ? thumbnail.replace(/^http:/, 'https:') : null,
-    genre: info.categories?.[0] ?? null,
+    genre: normalizeGenre(info.categories ?? []),
     synopsis: info.description ?? null,
     rating: 0,
   }

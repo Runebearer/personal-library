@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { createShelf, deleteShelf, renameShelf, subscribeToShelves } from '../firebase/firestore'
 import { signOut } from '../firebase/auth'
 import { ShelfCard } from '../components/ShelfCard'
+import { GENRE_LIST } from '../lib/genre'
 import type { Shelf, ShelfMode } from '../types'
 
 const MODE_OPTIONS: { value: ShelfMode; label: string }[] = [
@@ -17,6 +18,7 @@ export function ShelvesPage() {
   const [shelves, setShelves] = useState<Shelf[]>([])
   const [newShelfName, setNewShelfName] = useState('')
   const [newShelfMode, setNewShelfMode] = useState<ShelfMode>('custom')
+  const [newShelfGenre, setNewShelfGenre] = useState(GENRE_LIST[0])
 
   useEffect(() => {
     if (!user) return
@@ -26,9 +28,11 @@ export function ShelvesPage() {
   async function handleCreateShelf(e: FormEvent) {
     e.preventDefault()
     if (!user || !newShelfName.trim()) return
-    await createShelf(user.uid, newShelfName.trim(), newShelfMode)
+    const genreFilter = newShelfMode === 'genre' ? newShelfGenre : null
+    await createShelf(user.uid, newShelfName.trim(), newShelfMode, genreFilter)
     setNewShelfName('')
     setNewShelfMode('custom')
+    setNewShelfGenre(GENRE_LIST[0])
   }
 
   function handleDeleteShelf(shelfId: string) {
@@ -75,6 +79,19 @@ export function ShelvesPage() {
             </button>
           ))}
         </div>
+        {newShelfMode === 'genre' && (
+          <select
+            value={newShelfGenre}
+            onChange={(e) => setNewShelfGenre(e.target.value)}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900"
+          >
+            {GENRE_LIST.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        )}
       </form>
 
       <div className="flex flex-col gap-2 px-4">

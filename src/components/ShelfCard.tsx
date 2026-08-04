@@ -60,7 +60,7 @@ export function ShelfCard({
         <span className="flex items-center gap-2">
           <span className="font-medium text-gray-900">{shelf.name}</span>
           <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500">
-            {MODE_LABELS[shelf.mode]}
+            {shelf.mode === 'genre' && shelf.genreFilter ? shelf.genreFilter : MODE_LABELS[shelf.mode]}
           </span>
         </span>
         <span className="text-gray-400">›</span>

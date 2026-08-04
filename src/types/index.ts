@@ -4,6 +4,7 @@ export interface Shelf {
   id: string
   name: string
   mode: ShelfMode
+  genreFilter: string | null
   createdAt: number
 }
 

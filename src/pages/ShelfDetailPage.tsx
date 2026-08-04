@@ -22,12 +22,14 @@ function groupBooks(books: Book[], shelf: Shelf | null): { heading: string | nul
     return [{ heading: null, books: [...books].sort((a, b) => a.title.localeCompare(b.title)) }]
   }
 
-  const keyOf = (book: Book) =>
-    shelf.mode === 'genre' ? book.genre ?? 'Sans genre' : book.authors[0] ?? 'Auteur inconnu'
+  if (shelf.mode === 'genre') {
+    const filtered = shelf.genreFilter ? books.filter((b) => b.genre === shelf.genreFilter) : books
+    return [{ heading: null, books: filtered }]
+  }
 
   const groups = new Map<string, Book[]>()
   for (const book of books) {
-    const key = keyOf(book)
+    const key = book.authors[0] ?? 'Auteur inconnu'
     if (!groups.has(key)) groups.set(key, [])
     groups.get(key)!.push(book)
   }

@@ -37,6 +37,7 @@ export function subscribeToShelves(uid: string, callback: (shelves: Shelf[]) => 
           id: d.id,
           name: data.name as string,
           mode: (data.mode as ShelfMode) ?? 'custom',
+          genreFilter: (data.genreFilter as string | null) ?? null,
           createdAt: (data.createdAt as Timestamp | null)?.toMillis() ?? 0,
         }
       }),
@@ -59,13 +60,19 @@ export function subscribeToShelf(
       id: snapshot.id,
       name: data.name as string,
       mode: (data.mode as ShelfMode) ?? 'custom',
+      genreFilter: (data.genreFilter as string | null) ?? null,
       createdAt: (data.createdAt as Timestamp | null)?.toMillis() ?? 0,
     })
   })
 }
 
-export function createShelf(uid: string, name: string, mode: ShelfMode) {
-  return addDoc(shelvesRef(uid), { name, mode, createdAt: serverTimestamp() })
+export function createShelf(
+  uid: string,
+  name: string,
+  mode: ShelfMode,
+  genreFilter: string | null = null,
+) {
+  return addDoc(shelvesRef(uid), { name, mode, genreFilter, createdAt: serverTimestamp() })
 }
 
 export function renameShelf(uid: string, shelfId: string, name: string) {
