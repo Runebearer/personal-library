@@ -8,6 +8,24 @@ interface PendingLink {
   credential: AuthCredential
 }
 
+function formatAuthError(err: unknown): string {
+  if (err instanceof FirebaseError) {
+    switch (err.code) {
+      case 'auth/email-already-in-use':
+        return 'Un compte existe déjà avec cet email. Connecte-toi plutôt.'
+      case 'auth/invalid-credential':
+        return 'Email ou mot de passe incorrect.'
+      case 'auth/weak-password':
+        return 'Le mot de passe doit contenir au moins 6 caractères.'
+      case 'auth/invalid-email':
+        return 'Adresse email invalide.'
+      default:
+        return err.message
+    }
+  }
+  return err instanceof Error ? err.message : 'Une erreur est survenue.'
+}
+
 export function LoginPage() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
@@ -28,7 +46,10 @@ export function LoginPage() {
         await signUp(email, password)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue.')
+      if (err instanceof FirebaseError && err.code === 'auth/email-already-in-use') {
+        setMode('signin')
+      }
+      setError(formatAuthError(err))
     } finally {
       setLoading(false)
     }
@@ -48,7 +69,7 @@ export function LoginPage() {
           return
         }
       }
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue.')
+      setError(formatAuthError(err))
     } finally {
       setLoading(false)
     }
@@ -63,7 +84,7 @@ export function LoginPage() {
       await linkGoogleToPasswordAccount(pendingLink.email, linkPassword, pendingLink.credential)
       setPendingLink(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue.')
+      setError(formatAuthError(err))
     } finally {
       setLoading(false)
     }

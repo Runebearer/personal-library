@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { FormEvent } from 'react'
 import { BarcodeScanner } from './BarcodeScanner'
 import { BookDetailModal } from './BookDetailModal'
 import { fetchBookByIsbn } from '../lib/openLibrary'
@@ -10,6 +11,59 @@ type Step =
   | { kind: 'confirm'; metadata: BookMetadata }
   | { kind: 'not-found'; isbn: string }
   | { kind: 'error'; message: string }
+
+function isDesktopDevice() {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(pointer: fine)').matches &&
+    navigator.maxTouchPoints === 0
+  )
+}
+
+function ManualIsbnForm({
+  onSubmit,
+  onCancel,
+}: {
+  onSubmit: (isbn: string) => void
+  onCancel: () => void
+}) {
+  const [isbn, setIsbn] = useState('')
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    const trimmed = isbn.trim()
+    if (trimmed) onSubmit(trimmed)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-black/40 sm:items-center sm:justify-center">
+      <form
+        onSubmit={handleSubmit}
+        className="flex w-full flex-col gap-3 rounded-t-2xl bg-white p-4 sm:max-w-sm sm:rounded-2xl"
+      >
+        <p className="text-center font-medium text-gray-900">Ajouter un livre</p>
+        <label className="flex flex-col gap-1 text-sm text-gray-600">
+          Code ISBN
+          <input
+            type="text"
+            inputMode="numeric"
+            autoFocus
+            value={isbn}
+            onChange={(e) => setIsbn(e.target.value)}
+            placeholder="Ex. 9780140328721"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
+          />
+        </label>
+        <button type="submit" className="rounded-lg bg-gray-900 py-2 text-white">
+          Rechercher
+        </button>
+        <button type="button" onClick={onCancel} className="rounded-lg py-2 text-gray-500">
+          Annuler
+        </button>
+      </form>
+    </div>
+  )
+}
 
 export function AddBookModal({
   onConfirm,
@@ -35,7 +89,11 @@ export function AddBookModal({
   }
 
   if (step.kind === 'scanning') {
-    return <BarcodeScanner onDetected={handleDetected} onCancel={onClose} />
+    return isDesktopDevice() ? (
+      <ManualIsbnForm onSubmit={handleDetected} onCancel={onClose} />
+    ) : (
+      <BarcodeScanner onDetected={handleDetected} onCancel={onClose} />
+    )
   }
 
   if (step.kind === 'confirm') {

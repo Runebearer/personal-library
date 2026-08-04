@@ -9,7 +9,17 @@ interface OpenLibraryEntry {
   notes?: string
 }
 
-export async function fetchBookByIsbn(isbn: string): Promise<BookMetadata | null> {
+interface GoogleBooksVolume {
+  volumeInfo?: {
+    title?: string
+    authors?: string[]
+    categories?: string[]
+    description?: string
+    imageLinks?: { thumbnail?: string; smallThumbnail?: string }
+  }
+}
+
+async function fetchFromOpenLibrary(isbn: string): Promise<BookMetadata | null> {
   const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
   const response = await fetch(url)
   if (!response.ok) {
@@ -29,4 +39,35 @@ export async function fetchBookByIsbn(isbn: string): Promise<BookMetadata | null
     synopsis: entry.excerpts?.[0]?.text ?? entry.notes ?? null,
     rating: 0,
   }
+}
+
+async function fetchFromGoogleBooks(isbn: string): Promise<BookMetadata | null> {
+  const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Google Books request failed: ${response.status}`)
+  }
+
+  const data = (await response.json()) as { items?: GoogleBooksVolume[] }
+  const info = data.items?.[0]?.volumeInfo
+  if (!info) return null
+
+  const thumbnail = info.imageLinks?.thumbnail ?? info.imageLinks?.smallThumbnail ?? null
+
+  return {
+    isbn,
+    title: info.title ?? 'Titre inconnu',
+    authors: info.authors ?? [],
+    coverUrl: thumbnail ? thumbnail.replace(/^http:/, 'https:') : null,
+    genre: info.categories?.[0] ?? null,
+    synopsis: info.description ?? null,
+    rating: 0,
+  }
+}
+
+export async function fetchBookByIsbn(isbn: string): Promise<BookMetadata | null> {
+  const fromOpenLibrary = await fetchFromOpenLibrary(isbn)
+  if (fromOpenLibrary) return fromOpenLibrary
+
+  return fetchFromGoogleBooks(isbn)
 }
