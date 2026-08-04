@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { BarcodeScanner } from './BarcodeScanner'
+import { BookDetailModal } from './BookDetailModal'
 import { fetchBookByIsbn } from '../lib/openLibrary'
 import type { BookMetadata } from '../types'
 
@@ -37,6 +38,17 @@ export function AddBookModal({
     return <BarcodeScanner onDetected={handleDetected} onCancel={onClose} />
   }
 
+  if (step.kind === 'confirm') {
+    return (
+      <BookDetailModal
+        metadata={step.metadata}
+        confirmLabel="Ajouter à l'étagère"
+        onConfirm={onConfirm}
+        onClose={onClose}
+      />
+    )
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/40 sm:items-center sm:justify-center">
       <div className="w-full rounded-t-2xl bg-white p-4 sm:max-w-sm sm:rounded-2xl">
@@ -71,36 +83,6 @@ export function AddBookModal({
               className="rounded-lg bg-gray-900 py-2 text-white"
             >
               Rescanner
-            </button>
-            <button type="button" onClick={onClose} className="rounded-lg py-2 text-gray-500">
-              Annuler
-            </button>
-          </div>
-        )}
-
-        {step.kind === 'confirm' && (
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-3">
-              <div className="h-28 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
-                {step.metadata.coverUrl && (
-                  <img
-                    src={step.metadata.coverUrl}
-                    alt={step.metadata.title}
-                    className="h-full w-full object-cover"
-                  />
-                )}
-              </div>
-              <div className="flex flex-col justify-center">
-                <p className="font-medium text-gray-900">{step.metadata.title}</p>
-                <p className="text-sm text-gray-500">{step.metadata.authors.join(', ')}</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => onConfirm(step.metadata)}
-              className="rounded-lg bg-gray-900 py-2 text-white"
-            >
-              Ajouter à l'étagère
             </button>
             <button type="button" onClick={onClose} className="rounded-lg py-2 text-gray-500">
               Annuler

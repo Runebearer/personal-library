@@ -1,26 +1,76 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { addBook, deleteBook, subscribeToBooks } from '../firebase/firestore'
+import {
+  addBook,
+  deleteBook,
+  subscribeToBooks,
+  subscribeToShelf,
+  updateBook,
+} from '../firebase/firestore'
 import { BookCard } from '../components/BookCard'
 import { AddBookModal } from '../components/AddBookModal'
-import type { Book, BookMetadata } from '../types'
+import { BookDetailModal } from '../components/BookDetailModal'
+import type { Book, BookMetadata, Shelf } from '../types'
+
+function groupBooks(books: Book[], shelf: Shelf | null): { heading: string | null; books: Book[] }[] {
+  if (!shelf || shelf.mode === 'custom') {
+    return [{ heading: null, books }]
+  }
+
+  if (shelf.mode === 'title') {
+    return [{ heading: null, books: [...books].sort((a, b) => a.title.localeCompare(b.title)) }]
+  }
+
+  const keyOf = (book: Book) =>
+    shelf.mode === 'genre' ? book.genre ?? 'Sans genre' : book.authors[0] ?? 'Auteur inconnu'
+
+  const groups = new Map<string, Book[]>()
+  for (const book of books) {
+    const key = keyOf(book)
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(book)
+  }
+
+  return [...groups.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([heading, groupBooks]) => ({ heading, books: groupBooks }))
+}
 
 export function ShelfDetailPage() {
   const { shelfId } = useParams<{ shelfId: string }>()
   const { user } = useAuth()
+  const [shelf, setShelf] = useState<Shelf | null>(null)
   const [books, setBooks] = useState<Book[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null)
+
+  useEffect(() => {
+    if (!user || !shelfId) return
+    return subscribeToShelf(user.uid, shelfId, setShelf)
+  }, [user, shelfId])
 
   useEffect(() => {
     if (!user || !shelfId) return
     return subscribeToBooks(user.uid, shelfId, setBooks)
   }, [user, shelfId])
 
+  const groups = useMemo(() => groupBooks(books, shelf), [books, shelf])
+
   async function handleConfirmAdd(metadata: BookMetadata) {
     if (!user || !shelfId) return
     await addBook(user.uid, shelfId, metadata)
     setShowAddModal(false)
+  }
+
+  async function handleConfirmEdit(metadata: BookMetadata) {
+    if (!user || !shelfId || !selectedBook) return
+    await updateBook(user.uid, shelfId, selectedBook.id, {
+      genre: metadata.genre,
+      synopsis: metadata.synopsis,
+      rating: metadata.rating,
+    })
+    setSelectedBook(null)
   }
 
   return (
@@ -29,22 +79,34 @@ export function ShelfDetailPage() {
         <Link to="/" className="text-gray-500">
           ‹
         </Link>
-        <h1 className="text-xl font-semibold text-gray-900">Livres</h1>
+        <h1 className="text-xl font-semibold text-gray-900">{shelf?.name ?? 'Livres'}</h1>
       </header>
 
-      <div className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3">
-        {books.length === 0 && (
-          <p className="col-span-full pt-8 text-center text-sm text-gray-400">
-            Aucun livre sur cette étagère. Scannez un code-barres pour en ajouter un.
-          </p>
-        )}
-        {books.map((book) => (
-          <BookCard
-            key={book.id}
-            book={book}
-            onDelete={() => user && shelfId && deleteBook(user.uid, shelfId, book.id)}
-          />
-        ))}
+      {books.length === 0 && (
+        <p className="col-span-full pt-8 text-center text-sm text-gray-400">
+          Aucun livre sur cette étagère. Scannez un code-barres pour en ajouter un.
+        </p>
+      )}
+
+      <div className="flex flex-col gap-4 px-4">
+        {books.length > 0 &&
+          groups.map((group) => (
+            <div key={group.heading ?? '_'} className="flex flex-col gap-2">
+              {group.heading && (
+                <h2 className="text-sm font-medium text-gray-500">{group.heading}</h2>
+              )}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {group.books.map((book) => (
+                  <BookCard
+                    key={book.id}
+                    book={book}
+                    onClick={() => setSelectedBook(book)}
+                    onDelete={() => user && shelfId && deleteBook(user.uid, shelfId, book.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
       </div>
 
       <button
@@ -58,6 +120,15 @@ export function ShelfDetailPage() {
 
       {showAddModal && (
         <AddBookModal onConfirm={handleConfirmAdd} onClose={() => setShowAddModal(false)} />
+      )}
+
+      {selectedBook && (
+        <BookDetailModal
+          metadata={selectedBook}
+          confirmLabel="Enregistrer"
+          onConfirm={handleConfirmEdit}
+          onClose={() => setSelectedBook(null)}
+        />
       )}
     </div>
   )

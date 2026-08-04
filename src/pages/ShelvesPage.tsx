@@ -1,14 +1,22 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { createShelf, subscribeToShelves } from '../firebase/firestore'
+import { createShelf, deleteShelf, renameShelf, subscribeToShelves } from '../firebase/firestore'
 import { signOut } from '../firebase/auth'
 import { ShelfCard } from '../components/ShelfCard'
-import type { Shelf } from '../types'
+import type { Shelf, ShelfMode } from '../types'
+
+const MODE_OPTIONS: { value: ShelfMode; label: string }[] = [
+  { value: 'custom', label: 'Perso' },
+  { value: 'genre', label: 'Genre' },
+  { value: 'author', label: 'Auteur' },
+  { value: 'title', label: 'Titre' },
+]
 
 export function ShelvesPage() {
   const { user } = useAuth()
   const [shelves, setShelves] = useState<Shelf[]>([])
   const [newShelfName, setNewShelfName] = useState('')
+  const [newShelfMode, setNewShelfMode] = useState<ShelfMode>('custom')
 
   useEffect(() => {
     if (!user) return
@@ -18,8 +26,15 @@ export function ShelvesPage() {
   async function handleCreateShelf(e: FormEvent) {
     e.preventDefault()
     if (!user || !newShelfName.trim()) return
-    await createShelf(user.uid, newShelfName.trim())
+    await createShelf(user.uid, newShelfName.trim(), newShelfMode)
     setNewShelfName('')
+    setNewShelfMode('custom')
+  }
+
+  function handleDeleteShelf(shelfId: string) {
+    if (!user) return
+    if (!confirm('Supprimer cette étagère et tous ses livres ?')) return
+    deleteShelf(user.uid, shelfId)
   }
 
   return (
@@ -31,17 +46,35 @@ export function ShelvesPage() {
         </button>
       </header>
 
-      <form onSubmit={handleCreateShelf} className="flex gap-2 px-4 pb-4">
-        <input
-          type="text"
-          placeholder="Nouvelle étagère"
-          value={newShelfName}
-          onChange={(e) => setNewShelfName(e.target.value)}
-          className="flex-1 rounded-lg border border-gray-300 px-3 py-2"
-        />
-        <button type="submit" className="rounded-lg bg-gray-900 px-4 py-2 text-white">
-          Créer
-        </button>
+      <form onSubmit={handleCreateShelf} className="flex flex-col gap-2 px-4 pb-4">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Nouvelle étagère"
+            value={newShelfName}
+            onChange={(e) => setNewShelfName(e.target.value)}
+            className="flex-1 rounded-lg border border-gray-300 px-3 py-2"
+          />
+          <button type="submit" className="rounded-lg bg-gray-900 px-4 py-2 text-white">
+            Créer
+          </button>
+        </div>
+        <div className="flex gap-2">
+          {MODE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setNewShelfMode(option.value)}
+              className={`rounded-full px-3 py-1 text-xs ${
+                newShelfMode === option.value
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-white text-gray-500 ring-1 ring-gray-200'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </form>
 
       <div className="flex flex-col gap-2 px-4">
@@ -51,7 +84,12 @@ export function ShelvesPage() {
           </p>
         )}
         {shelves.map((shelf) => (
-          <ShelfCard key={shelf.id} shelf={shelf} />
+          <ShelfCard
+            key={shelf.id}
+            shelf={shelf}
+            onRename={(name) => user && renameShelf(user.uid, shelf.id, name)}
+            onDelete={() => handleDeleteShelf(shelf.id)}
+          />
         ))}
       </div>
     </div>

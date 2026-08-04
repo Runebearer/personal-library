@@ -1,6 +1,9 @@
+export type ShelfMode = 'custom' | 'genre' | 'author' | 'title'
+
 export interface Shelf {
   id: string
   name: string
+  mode: ShelfMode
   createdAt: number
 }
 
@@ -10,6 +13,9 @@ export interface Book {
   title: string
   authors: string[]
   coverUrl: string | null
+  genre: string | null
+  synopsis: string | null
+  rating: number
   addedAt: number
 }
 
@@ -18,4 +24,7 @@ export interface BookMetadata {
   title: string
   authors: string[]
   coverUrl: string | null
+  genre: string | null
+  synopsis: string | null
+  rating: number
 }
