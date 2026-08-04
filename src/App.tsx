@@ -36,6 +36,24 @@ function RequireAuth({ children }: { children: JSX.Element }) {
   return children
 }
 
+function RedirectIfAuthed({ children }: { children: JSX.Element }) {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-gray-50 text-gray-400">
+        Chargement…
+      </div>
+    )
+  }
+
+  if (user) {
+    return <Navigate to="/" replace />
+  }
+
+  return children
+}
+
 export function App() {
   if (!isFirebaseConfigured) {
     return <MissingFirebaseConfig />
@@ -43,7 +61,14 @@ export function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/login"
+        element={
+          <RedirectIfAuthed>
+            <LoginPage />
+          </RedirectIfAuthed>
+        }
+      />
       <Route
         path="/"
         element={
