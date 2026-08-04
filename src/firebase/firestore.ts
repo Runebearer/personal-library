@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   orderBy,
@@ -124,11 +125,37 @@ export function updateBook(
   uid: string,
   shelfId: string,
   bookId: string,
-  patch: Partial<Pick<Book, 'genre' | 'synopsis' | 'rating'>>,
+  patch: Partial<Pick<Book, 'title' | 'authors' | 'genre' | 'synopsis' | 'rating'>>,
 ) {
   return updateDoc(doc(db, 'users', uid, 'shelves', shelfId, 'books', bookId), patch)
 }
 
 export function deleteBook(uid: string, shelfId: string, bookId: string) {
   return deleteDoc(doc(db, 'users', uid, 'shelves', shelfId, 'books', bookId))
+}
+
+export async function moveBook(
+  uid: string,
+  fromShelfId: string,
+  bookId: string,
+  toShelfId: string,
+) {
+  const fromRef = doc(db, 'users', uid, 'shelves', fromShelfId, 'books', bookId)
+  const snapshot = await getDoc(fromRef)
+  if (!snapshot.exists()) return
+  const data = snapshot.data()
+
+  const batch = writeBatch(db)
+  batch.set(doc(booksRef(uid, toShelfId)), {
+    isbn: data.isbn,
+    title: data.title,
+    authors: data.authors,
+    coverUrl: data.coverUrl,
+    genre: data.genre,
+    synopsis: data.synopsis,
+    rating: data.rating,
+    addedAt: serverTimestamp(),
+  })
+  batch.delete(fromRef)
+  await batch.commit()
 }

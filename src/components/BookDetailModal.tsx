@@ -8,11 +8,13 @@ export function BookDetailModal({
   confirmLabel,
   onConfirm,
   onClose,
+  onMoveToShelf,
 }: {
   metadata: BookMetadata
   confirmLabel: string
   onConfirm: (metadata: BookMetadata) => void
   onClose: () => void
+  onMoveToShelf?: () => void
 }) {
   const [title, setTitle] = useState(metadata.title)
   const [authors, setAuthors] = useState(metadata.authors.join(', '))
@@ -104,6 +106,15 @@ export function BookDetailModal({
         >
           {confirmLabel}
         </button>
+        {onMoveToShelf && (
+          <button
+            type="button"
+            onClick={onMoveToShelf}
+            className="rounded-lg py-2 text-gray-600 ring-1 ring-gray-200"
+          >
+            Changer d'étagère
+          </button>
+        )}
         <button type="button" onClick={onClose} className="rounded-lg py-2 text-gray-500">
           Annuler
         </button>

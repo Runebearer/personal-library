@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   addBook,
   deleteBook,
+  moveBook,
   subscribeToBooks,
   subscribeToShelf,
   updateBook,
@@ -11,6 +12,7 @@ import {
 import { BookCard } from '../components/BookCard'
 import { AddBookModal } from '../components/AddBookModal'
 import { BookDetailModal } from '../components/BookDetailModal'
+import { MoveBookModal } from '../components/MoveBookModal'
 import type { Book, BookMetadata, Shelf } from '../types'
 
 function groupBooks(books: Book[], shelf: Shelf | null): { heading: string | null; books: Book[] }[] {
@@ -46,6 +48,7 @@ export function ShelfDetailPage() {
   const [books, setBooks] = useState<Book[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedBook, setSelectedBook] = useState<Book | null>(null)
+  const [movingBook, setMovingBook] = useState<Book | null>(null)
 
   useEffect(() => {
     if (!user || !shelfId) return
@@ -68,11 +71,19 @@ export function ShelfDetailPage() {
   async function handleConfirmEdit(metadata: BookMetadata) {
     if (!user || !shelfId || !selectedBook) return
     await updateBook(user.uid, shelfId, selectedBook.id, {
+      title: metadata.title,
+      authors: metadata.authors,
       genre: metadata.genre,
       synopsis: metadata.synopsis,
       rating: metadata.rating,
     })
     setSelectedBook(null)
+  }
+
+  async function handleMoveBook(toShelfId: string) {
+    if (!user || !shelfId || !movingBook) return
+    await moveBook(user.uid, shelfId, movingBook.id, toShelfId)
+    setMovingBook(null)
   }
 
   return (
@@ -130,6 +141,19 @@ export function ShelfDetailPage() {
           confirmLabel="Enregistrer"
           onConfirm={handleConfirmEdit}
           onClose={() => setSelectedBook(null)}
+          onMoveToShelf={() => {
+            setMovingBook(selectedBook)
+            setSelectedBook(null)
+          }}
+        />
+      )}
+
+      {movingBook && user && shelfId && (
+        <MoveBookModal
+          uid={user.uid}
+          currentShelfId={shelfId}
+          onSelect={handleMoveBook}
+          onClose={() => setMovingBook(null)}
         />
       )}
     </div>
