@@ -88,6 +88,21 @@ export function AddBookModal({
     }
   }
 
+  function handleManualEntry(isbn: string) {
+    setStep({
+      kind: 'confirm',
+      metadata: {
+        isbn,
+        title: '',
+        authors: [],
+        coverUrl: null,
+        genre: null,
+        synopsis: null,
+        rating: 0,
+      },
+    })
+  }
+
   if (step.kind === 'scanning') {
     return isDesktopDevice() ? (
       <ManualIsbnForm onSubmit={handleDetected} onCancel={onClose} />
@@ -121,8 +136,15 @@ export function AddBookModal({
             </p>
             <button
               type="button"
-              onClick={() => setStep({ kind: 'scanning' })}
+              onClick={() => handleManualEntry(step.isbn)}
               className="rounded-lg bg-gray-900 py-2 text-white"
+            >
+              Ajouter manuellement
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep({ kind: 'scanning' })}
+              className="rounded-lg py-2 text-gray-600 ring-1 ring-gray-200"
             >
               Rescanner
             </button>

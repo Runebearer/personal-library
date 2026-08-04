@@ -13,6 +13,8 @@ export function BookDetailModal({
   onConfirm: (metadata: BookMetadata) => void
   onClose: () => void
 }) {
+  const [title, setTitle] = useState(metadata.title)
+  const [authors, setAuthors] = useState(metadata.authors.join(', '))
   const [genre, setGenre] = useState(metadata.genre ?? '')
   const [synopsis, setSynopsis] = useState(metadata.synopsis ?? '')
   const [rating, setRating] = useState(metadata.rating)
@@ -20,6 +22,11 @@ export function BookDetailModal({
   function handleConfirm() {
     onConfirm({
       ...metadata,
+      title: title.trim() || 'Titre inconnu',
+      authors: authors
+        .split(',')
+        .map((a) => a.trim())
+        .filter(Boolean),
       genre: genre.trim() || null,
       synopsis: synopsis.trim() || null,
       rating,
@@ -39,9 +46,21 @@ export function BookDetailModal({
               />
             )}
           </div>
-          <div className="flex flex-col justify-center">
-            <p className="font-medium text-gray-900">{metadata.title}</p>
-            <p className="text-sm text-gray-500">{metadata.authors.join(', ')}</p>
+          <div className="flex flex-1 flex-col justify-center gap-2">
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Titre du livre"
+              className="rounded-lg border border-gray-300 px-3 py-2 font-medium text-gray-900"
+            />
+            <input
+              type="text"
+              value={authors}
+              onChange={(e) => setAuthors(e.target.value)}
+              placeholder="Auteur(s), séparés par une virgule"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-500"
+            />
           </div>
         </div>
 
