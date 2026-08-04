@@ -1,10 +1,12 @@
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  linkWithCredential,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
+  type AuthCredential,
   type User,
 } from 'firebase/auth'
 import { auth } from './config'
@@ -21,6 +23,15 @@ export function signIn(email: string, password: string) {
 
 export function signInWithGoogle() {
   return signInWithPopup(auth, googleProvider)
+}
+
+export async function linkGoogleToPasswordAccount(
+  email: string,
+  password: string,
+  pendingCredential: AuthCredential,
+) {
+  const result = await signInWithEmailAndPassword(auth, email, password)
+  return linkWithCredential(result.user, pendingCredential)
 }
 
 export function signOut() {

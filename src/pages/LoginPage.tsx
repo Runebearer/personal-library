@@ -1,5 +1,12 @@
 import { FormEvent, useState } from 'react'
-import { signIn, signInWithGoogle, signUp } from '../firebase/auth'
+import { FirebaseError } from 'firebase/app'
+import { AuthErrorCodes, GoogleAuthProvider, type AuthCredential } from 'firebase/auth'
+import { linkGoogleToPasswordAccount, signIn, signInWithGoogle, signUp } from '../firebase/auth'
+
+interface PendingLink {
+  email: string
+  credential: AuthCredential
+}
 
 export function LoginPage() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
@@ -7,6 +14,8 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [pendingLink, setPendingLink] = useState<PendingLink | null>(null)
+  const [linkPassword, setLinkPassword] = useState('')
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -31,10 +40,78 @@ export function LoginPage() {
     try {
       await signInWithGoogle()
     } catch (err) {
+      if (err instanceof FirebaseError && err.code === AuthErrorCodes.NEED_CONFIRMATION) {
+        const credential = GoogleAuthProvider.credentialFromError(err)
+        const linkEmail = (err.customData as { email?: string } | undefined)?.email
+        if (credential && linkEmail) {
+          setPendingLink({ email: linkEmail, credential })
+          return
+        }
+      }
       setError(err instanceof Error ? err.message : 'Une erreur est survenue.')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleLinkSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (!pendingLink) return
+    setError(null)
+    setLoading(true)
+    try {
+      await linkGoogleToPasswordAccount(pendingLink.email, linkPassword, pendingLink.credential)
+      setPendingLink(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (pendingLink) {
+    return (
+      <div className="flex min-h-dvh flex-col justify-center gap-6 bg-gray-50 px-6 py-12">
+        <h1 className="text-center text-2xl font-semibold text-gray-900">Personal Library</h1>
+        <div className="flex flex-col gap-2 text-center">
+          <p className="text-sm text-gray-700">
+            Un compte existe déjà pour <strong>{pendingLink.email}</strong> avec un mot de passe.
+          </p>
+          <p className="text-sm text-gray-500">
+            Entre ce mot de passe pour lier ton compte Google à ce compte existant.
+          </p>
+        </div>
+        <form onSubmit={handleLinkSubmit} className="flex flex-col gap-3">
+          <input
+            type="password"
+            required
+            placeholder="Mot de passe"
+            value={linkPassword}
+            onChange={(e) => setLinkPassword(e.target.value)}
+            className="rounded-lg border border-gray-300 px-4 py-3 text-base"
+          />
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-lg bg-gray-900 py-3 font-medium text-white disabled:opacity-50"
+          >
+            Lier les comptes
+          </button>
+        </form>
+        <button
+          type="button"
+          onClick={() => {
+            setPendingLink(null)
+            setError(null)
+            setLinkPassword('')
+          }}
+          className="text-center text-sm text-gray-500"
+        >
+          Annuler
+        </button>
+      </div>
+    )
   }
 
   return (
