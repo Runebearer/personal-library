@@ -7,7 +7,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/icon.svg'],
+      includeAssets: ['icons/icon.svg', 'textures/*.webp'],
+      // note: 'textures/*.webp' already globs every file in the folder,
+      // new textures dropped in public/textures are picked up automatically.
       manifest: {
         name: 'Personal Library',
         short_name: 'Library',

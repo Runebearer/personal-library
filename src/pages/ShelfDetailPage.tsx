@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -14,6 +14,8 @@ import { AddBookModal } from '../components/AddBookModal'
 import { BookDetailModal } from '../components/BookDetailModal'
 import { MoveBookModal } from '../components/MoveBookModal'
 import type { Book, BookMetadata, Shelf } from '../types'
+
+const Shelf3D = lazy(() => import('../components/Shelf3D').then((m) => ({ default: m.Shelf3D })))
 
 function groupBooks(books: Book[], shelf: Shelf | null): { heading: string | null; books: Book[] }[] {
   if (!shelf || shelf.mode === 'custom') {
@@ -49,6 +51,7 @@ export function ShelfDetailPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedBook, setSelectedBook] = useState<Book | null>(null)
   const [movingBook, setMovingBook] = useState<Book | null>(null)
+  const [view3D, setView3D] = useState(false)
 
   useEffect(() => {
     if (!user || !shelfId) return
@@ -90,11 +93,24 @@ export function ShelfDetailPage() {
 
   return (
     <div className="min-h-dvh bg-gray-50 pb-24">
-      <header className="flex items-center gap-3 px-4 py-4">
-        <Link to="/" className="text-gray-500">
-          ‹
-        </Link>
-        <h1 className="text-xl font-semibold text-gray-900">{shelf?.name ?? 'Livres'}</h1>
+      <header className="flex items-center justify-between gap-3 px-4 py-4">
+        <div className="flex items-center gap-3">
+          <Link to="/library" className="text-gray-500">
+            ‹
+          </Link>
+          <h1 className="text-xl font-semibold text-gray-900">{shelf?.name ?? 'Livres'}</h1>
+        </div>
+        {books.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setView3D((v) => !v)}
+            className={`rounded-full px-3 py-1 text-xs ${
+              view3D ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 ring-1 ring-gray-200'
+            }`}
+          >
+            {view3D ? 'Vue liste' : 'Vue 3D'}
+          </button>
+        )}
       </header>
 
       {books.length === 0 && (
@@ -103,9 +119,23 @@ export function ShelfDetailPage() {
         </p>
       )}
 
-      <div className="flex flex-col gap-4 px-4">
-        {books.length > 0 &&
-          groups.map((group) => (
+      {books.length > 0 && view3D && (
+        <div className="px-4">
+          <Suspense
+            fallback={
+              <div className="flex h-[65vh] w-full items-center justify-center rounded-xl bg-gray-100 text-sm text-gray-400">
+                Chargement de la vue 3D…
+              </div>
+            }
+          >
+            <Shelf3D books={books} onSelectBook={setSelectedBook} />
+          </Suspense>
+        </div>
+      )}
+
+      {books.length > 0 && !view3D && (
+        <div className="flex flex-col gap-4 px-4">
+          {groups.map((group) => (
             <div key={group.heading ?? '_'} className="flex flex-col gap-2">
               {group.heading && (
                 <h2 className="text-sm font-medium text-gray-500">{group.heading}</h2>
@@ -122,7 +152,8 @@ export function ShelfDetailPage() {
               </div>
             </div>
           ))}
-      </div>
+        </div>
+      )}
 
       <button
         type="button"

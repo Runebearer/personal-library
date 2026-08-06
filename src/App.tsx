@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { isFirebaseConfigured } from './firebase/config'
 import { LoginPage } from './pages/LoginPage'
+import { VestibulePage } from './pages/VestibulePage'
 import { ShelvesPage } from './pages/ShelvesPage'
 import { ShelfDetailPage } from './pages/ShelfDetailPage'
 
@@ -71,6 +72,14 @@ export function App() {
       />
       <Route
         path="/"
+        element={
+          <RequireAuth>
+            <VestibulePage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/library"
         element={
           <RequireAuth>
             <ShelvesPage />
