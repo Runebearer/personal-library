@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
+import { TransitionProvider } from './context/TransitionContext'
 import { isFirebaseConfigured } from './firebase/config'
 import { LoginPage } from './pages/LoginPage'
 import { VestibulePage } from './pages/VestibulePage'
@@ -61,39 +62,41 @@ export function App() {
   }
 
   return (
-    <Routes>
-      <Route
-        path="/login"
-        element={
-          <RedirectIfAuthed>
-            <LoginPage />
-          </RedirectIfAuthed>
-        }
-      />
-      <Route
-        path="/"
-        element={
-          <RequireAuth>
-            <VestibulePage />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/library"
-        element={
-          <RequireAuth>
-            <ShelvesPage />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/shelves/:shelfId"
-        element={
-          <RequireAuth>
-            <ShelfDetailPage />
-          </RequireAuth>
-        }
-      />
-    </Routes>
+    <TransitionProvider>
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            <RedirectIfAuthed>
+              <LoginPage />
+            </RedirectIfAuthed>
+          }
+        />
+        <Route
+          path="/"
+          element={
+            <RequireAuth>
+              <VestibulePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/library"
+          element={
+            <RequireAuth>
+              <ShelvesPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/shelves/:shelfId"
+          element={
+            <RequireAuth>
+              <ShelfDetailPage />
+            </RequireAuth>
+          }
+        />
+      </Routes>
+    </TransitionProvider>
   )
 }

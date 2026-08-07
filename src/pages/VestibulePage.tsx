@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { signOut } from '../firebase/auth'
+import { useTransition } from '../context/TransitionContext'
 
 const LobbyScene = lazy(() =>
   import('../components/three/LobbyScene').then((m) => ({ default: m.LobbyScene })),
@@ -8,6 +9,7 @@ const LobbyScene = lazy(() =>
 
 export function VestibulePage() {
   const navigate = useNavigate()
+  const { fadeAndNavigate } = useTransition()
 
   return (
     <Suspense
@@ -17,7 +19,10 @@ export function VestibulePage() {
         </div>
       }
     >
-      <LobbyScene onEnterLibrary={() => navigate('/library')} onLogout={() => signOut()} />
+      <LobbyScene
+        onEnterLibrary={() => fadeAndNavigate(() => navigate('/library'))}
+        onLogout={() => signOut()}
+      />
     </Suspense>
   )
 }
