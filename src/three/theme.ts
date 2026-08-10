@@ -14,6 +14,11 @@ export interface LibraryTheme {
   doorHoverColor: string
   doorFrameColor: string
   doorTexture?: string
+  fireplaceEmberColor: string
+  fireplaceHearthTexture?: string
+  fireplaceJambTexture?: string
+  fireplaceFireTexture?: string
+  torchFlameTexture?: string
   labelColor: string
   ambientIntensity: number
 }
@@ -31,6 +36,11 @@ export const oakTheme: LibraryTheme = {
   doorHoverColor: '#6b4226',
   doorFrameColor: '#2e1c10',
   doorTexture: '/textures/door-arched-01.webp',
+  fireplaceEmberColor: '#ff7a33',
+  fireplaceHearthTexture: '/textures/hearth-stone-01.webp',
+  fireplaceJambTexture: '/textures/fireplace-jamb-01.webp',
+  fireplaceFireTexture: '/textures/fireplace-fire-01.webp',
+  torchFlameTexture: '/textures/torch-flame-01.webp',
   labelColor: '#374151',
   ambientIntensity: 0.6,
 }

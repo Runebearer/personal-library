@@ -7,6 +7,7 @@ import { useLibraryTheme } from '../../three/ThemeContext'
 import { Room } from './Room'
 import { Desk } from './Desk'
 import { Door } from './Door'
+import { Fireplace } from './Fireplace'
 
 const ROOM_SIZE = 6
 const ROOM_HEIGHT = 3
@@ -76,6 +77,9 @@ function LobbyContents({
         label="Déconnexion"
         onSelect={onLogout}
       />
+
+      {/* fireplace in the corner right of the library door */}
+      <Fireplace position={[half - 0.9, 0, -half + 0.35]} />
 
       <OrbitControls
         target={[0, 1.6, 0]}
