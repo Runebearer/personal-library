@@ -8,6 +8,7 @@ export interface LibraryTheme {
   floorColor: string
   floorTexture?: string
   ceilingColor: string
+  ceilingTexture?: string
   deskColor: string
   deskAccentColor: string
   doorColor: string
@@ -29,7 +30,8 @@ export const oakTheme: LibraryTheme = {
   wallTexture: '/textures/wall-stone-01.webp',
   floorColor: '#8a5a34',
   floorTexture: '/textures/floor-wood-02.webp',
-  ceilingColor: '#f5f1e8',
+  ceilingColor: '#4b3d31',
+  ceilingTexture: '/textures/ceiling-beams-01.webp',
   deskColor: '#6b4226',
   deskAccentColor: '#3d2817',
   doorColor: '#4a2f1c',

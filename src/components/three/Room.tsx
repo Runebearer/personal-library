@@ -79,6 +79,34 @@ function TexturedFloor({ size, url }: { size: number; url: string }) {
   )
 }
 
+function PlainCeiling({ size, height, color }: { size: number; height: number; color: string }) {
+  return (
+    <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, height, 0]}>
+      <planeGeometry args={[size, size]} />
+      <meshStandardMaterial color={color} />
+    </mesh>
+  )
+}
+
+function TexturedCeiling({ size, height, url }: { size: number; height: number; url: string }) {
+  const texture = useTexture(url)
+
+  useEffect(() => {
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.RepeatWrapping
+    texture.repeat.set(size / 2, size / 2)
+    texture.colorSpace = THREE.SRGBColorSpace
+    texture.needsUpdate = true
+  }, [texture, size])
+
+  return (
+    <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, height, 0]}>
+      <planeGeometry args={[size, size]} />
+      <meshStandardMaterial map={texture} />
+    </mesh>
+  )
+}
+
 // A square room: floor, ceiling, four walls, all normals facing inward.
 export function Room({ size = 6, height = 3 }: { size?: number; height?: number }) {
   const theme = useLibraryTheme()
@@ -93,10 +121,13 @@ export function Room({ size = 6, height = 3 }: { size?: number; height?: number 
         <PlainFloor size={size} color={theme.floorColor} />
       )}
 
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, height, 0]}>
-        <planeGeometry args={[size, size]} />
-        <meshStandardMaterial color={theme.ceilingColor} />
-      </mesh>
+      {theme.ceilingTexture ? (
+        <Suspense fallback={<PlainCeiling size={size} height={height} color={theme.ceilingColor} />}>
+          <TexturedCeiling size={size} height={height} url={theme.ceilingTexture} />
+        </Suspense>
+      ) : (
+        <PlainCeiling size={size} height={height} color={theme.ceilingColor} />
+      )}
 
       {theme.wallTexture ? (
         <Suspense fallback={<PlainWalls size={size} height={height} color={theme.wallColor} />}>
