@@ -23,7 +23,7 @@ export const oakTheme: LibraryTheme = {
   wallColor: '#e7dfd3',
   wallTexture: '/textures/wall-stone-01.webp',
   floorColor: '#8a5a34',
-  floorTexture: '/textures/floor-wood-01.webp',
+  floorTexture: '/textures/floor-wood-02.webp',
   ceilingColor: '#f5f1e8',
   deskColor: '#6b4226',
   deskAccentColor: '#3d2817',
