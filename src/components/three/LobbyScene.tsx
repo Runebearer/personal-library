@@ -78,8 +78,8 @@ function LobbyContents({
         onSelect={onLogout}
       />
 
-      {/* fireplace in the corner right of the library door */}
-      <Fireplace position={[half - 0.9, 0, -half + 0.35]} />
+      {/* fireplace on the right wall, facing the desk across the room */}
+      <Fireplace position={[half - 0.25, 0, 0]} rotation={[0, -Math.PI / 2, 0]} />
 
       <OrbitControls
         target={[0, 1.6, 0]}

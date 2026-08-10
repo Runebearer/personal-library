@@ -27,6 +27,9 @@ const FIRE_HEIGHT = 0.8
 // frames) — without this the plane's bottom lines up with empty transparent space instead
 // of the visual base of the fire, making it look like it's floating above the hearth.
 const FIRE_BASE_PADDING = FIRE_HEIGHT * 0.13
+// Sits 1/4 of the way across the hearth slab's depth, measured from the back (wall) edge.
+const HEARTH_BACK_Z = DEPTH / 2 - HEARTH_DEPTH / 2
+const FIRE_Z = HEARTH_BACK_Z + HEARTH_DEPTH / 4
 
 function TexturedMaterial({ url, tint }: { url: string; tint?: string }) {
   const texture = useTexture(url)
@@ -150,7 +153,7 @@ export function Fireplace({
             fps={FIRE_FPS}
             width={FIRE_WIDTH}
             height={FIRE_HEIGHT}
-            position={[0, HEARTH_THICKNESS + FIRE_HEIGHT / 2 - FIRE_BASE_PADDING, -DEPTH / 2 + 0.12]}
+            position={[0, HEARTH_THICKNESS + FIRE_HEIGHT / 2 - FIRE_BASE_PADDING, FIRE_Z]}
           />
         </Suspense>
       ) : (
