@@ -11,6 +11,7 @@ export interface LibraryTheme {
   ceilingTexture?: string
   deskColor: string
   deskAccentColor: string
+  deskTexture?: string
   doorColor: string
   doorHoverColor: string
   doorFrameColor: string
@@ -20,6 +21,7 @@ export interface LibraryTheme {
   fireplaceJambTexture?: string
   fireplaceFireTexture?: string
   torchFlameTexture?: string
+  candleTexture?: string
   labelColor: string
   ambientIntensity: number
 }
@@ -34,6 +36,7 @@ export const oakTheme: LibraryTheme = {
   ceilingTexture: '/textures/ceiling-beams-01.webp',
   deskColor: '#6b4226',
   deskAccentColor: '#3d2817',
+  deskTexture: '/textures/desk-wood-01.webp',
   doorColor: '#4a2f1c',
   doorHoverColor: '#6b4226',
   doorFrameColor: '#2e1c10',
@@ -43,6 +46,7 @@ export const oakTheme: LibraryTheme = {
   fireplaceJambTexture: '/textures/fireplace-jamb-01.webp',
   fireplaceFireTexture: '/textures/fireplace-fire-01.webp',
   torchFlameTexture: '/textures/torch-flame-01.webp',
+  candleTexture: '/textures/candle-01.webp',
   labelColor: '#374151',
   ambientIntensity: 0.6,
 }

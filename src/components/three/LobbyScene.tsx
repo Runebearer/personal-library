@@ -8,6 +8,7 @@ import { Room } from './Room'
 import { Desk } from './Desk'
 import { Door } from './Door'
 import { Fireplace } from './Fireplace'
+import { Candle } from './Candle'
 
 const ROOM_SIZE = 6
 const ROOM_HEIGHT = 3
@@ -26,7 +27,7 @@ function LobbyContents({
 
   const [approaching, setApproaching] = useState(false)
   const startPos = useRef(new THREE.Vector3())
-  const targetPos = useRef(new THREE.Vector3(0, 1.55, -half + 0.55))
+  const targetPos = useRef(new THREE.Vector3(-half + 0.55, 1.55, 0))
   const progress = useRef(0)
 
   const beginApproach = useCallback(() => {
@@ -57,12 +58,18 @@ function LobbyContents({
 
       <Room size={ROOM_SIZE} height={ROOM_HEIGHT} />
 
-      {/* desk on the left wall */}
-      <Desk position={[-half + 0.9, 0, 0]} rotation={[0, Math.PI / 2, 0]} />
+      {/* desk on the wall in front of the user */}
+      <Desk position={[0, 0, -half + 0.25]} rotation={[0, 0, 0]} />
 
-      {/* door in front of the user: enters the library */}
+      {/* candle on the counter, slightly left of center, near the front edge facing the
+          user — counter top is at y=0.885 (Desk's PANEL_HEIGHT + 0.06); counter spans
+          z=[-half, -half+0.6], so -half+0.5 sits close to the front edge without overhanging */}
+      <Candle position={[-0.4, 0.885, -half + 0.5]} />
+
+      {/* door on the left wall: enters the library */}
       <Door
-        position={[0, 0, -half]}
+        position={[-half, 0, 0]}
+        rotation={[0, Math.PI / 2, 0]}
         label="La bibliothèque"
         onSelect={() => {
           beginApproach()
@@ -78,7 +85,7 @@ function LobbyContents({
         onSelect={onLogout}
       />
 
-      {/* fireplace on the right wall, facing the desk across the room */}
+      {/* fireplace on the right wall */}
       <Fireplace position={[half - 0.25, 0, 0]} rotation={[0, -Math.PI / 2, 0]} />
 
       <OrbitControls
