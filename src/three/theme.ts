@@ -22,6 +22,8 @@ export interface LibraryTheme {
   fireplaceFireTexture?: string
   torchFlameTexture?: string
   candleTexture?: string
+  bookCoverColor: string
+  bookPageColor: string
   labelColor: string
   ambientIntensity: number
 }
@@ -47,6 +49,8 @@ export const oakTheme: LibraryTheme = {
   fireplaceFireTexture: '/textures/fireplace-fire-01.webp',
   torchFlameTexture: '/textures/torch-flame-01.webp',
   candleTexture: '/textures/candle-01.webp',
+  bookCoverColor: '#4169e1',
+  bookPageColor: '#ede4d3',
   labelColor: '#374151',
   ambientIntensity: 0.6,
 }

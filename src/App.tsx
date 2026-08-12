@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { TransitionProvider } from './context/TransitionContext'
+import { ViewModeProvider, useViewMode } from './context/ViewModeContext'
 import { isFirebaseConfigured } from './firebase/config'
 import { LoginPage } from './pages/LoginPage'
 import { VestibulePage } from './pages/VestibulePage'
@@ -56,6 +57,11 @@ function RedirectIfAuthed({ children }: { children: JSX.Element }) {
   return children
 }
 
+function HomeRoute() {
+  const { viewMode } = useViewMode()
+  return viewMode === '3d' ? <VestibulePage /> : <ShelvesPage />
+}
+
 export function App() {
   if (!isFirebaseConfigured) {
     return <MissingFirebaseConfig />
@@ -63,40 +69,42 @@ export function App() {
 
   return (
     <TransitionProvider>
-      <Routes>
-        <Route
-          path="/login"
-          element={
-            <RedirectIfAuthed>
-              <LoginPage />
-            </RedirectIfAuthed>
-          }
-        />
-        <Route
-          path="/"
-          element={
-            <RequireAuth>
-              <VestibulePage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/library"
-          element={
-            <RequireAuth>
-              <ShelvesPage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/shelves/:shelfId"
-          element={
-            <RequireAuth>
-              <ShelfDetailPage />
-            </RequireAuth>
-          }
-        />
-      </Routes>
+      <ViewModeProvider>
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              <RedirectIfAuthed>
+                <LoginPage />
+              </RedirectIfAuthed>
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <RequireAuth>
+                <HomeRoute />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/library"
+            element={
+              <RequireAuth>
+                <ShelvesPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/shelves/:shelfId"
+            element={
+              <RequireAuth>
+                <ShelfDetailPage />
+              </RequireAuth>
+            }
+          />
+        </Routes>
+      </ViewModeProvider>
     </TransitionProvider>
   )
 }

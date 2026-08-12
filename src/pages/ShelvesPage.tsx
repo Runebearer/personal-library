@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { createShelf, deleteShelf, renameShelf, subscribeToShelves } from '../firebase/firestore'
 import { signOut } from '../firebase/auth'
 import { ShelfCard } from '../components/ShelfCard'
+import { ViewModeToggle } from '../components/ViewModeToggle'
 import { GENRE_LIST } from '../lib/genre'
 import type { Shelf, ShelfMode } from '../types'
 
@@ -45,9 +46,12 @@ export function ShelvesPage() {
     <div className="min-h-dvh bg-gray-50 pb-8">
       <header className="flex items-center justify-between px-4 py-4">
         <h1 className="text-xl font-semibold text-gray-900">Mes étagères</h1>
-        <button type="button" onClick={() => signOut()} className="text-sm text-gray-500">
-          Déconnexion
-        </button>
+        <div className="flex items-center gap-3">
+          <ViewModeToggle />
+          <button type="button" onClick={() => signOut()} className="text-sm text-gray-500">
+            Déconnexion
+          </button>
+        </div>
       </header>
 
       <form onSubmit={handleCreateShelf} className="flex flex-col gap-2 px-4 pb-4">

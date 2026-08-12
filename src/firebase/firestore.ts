@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   Timestamp,
   updateDoc,
+  where,
   writeBatch,
 } from 'firebase/firestore'
 import { db } from './config'
@@ -74,6 +75,28 @@ export function createShelf(
   genreFilter: string | null = null,
 ) {
   return addDoc(shelvesRef(uid), { name, mode, genreFilter, createdAt: serverTimestamp() })
+}
+
+// Looks up a shelf by exact name, creating it if it doesn't exist yet — used where a shelf
+// is referenced by a fixed name (e.g. the lobby's "favorites" shelf) rather than picked by
+// the user from a list.
+export async function getOrCreateShelfByName(
+  uid: string,
+  name: string,
+  mode: ShelfMode,
+  genreFilter: string | null = null,
+): Promise<string> {
+  const existing = await getDocs(query(shelvesRef(uid), where('name', '==', name)))
+  if (!existing.empty) {
+    return existing.docs[0].id
+  }
+  const created = await addDoc(shelvesRef(uid), {
+    name,
+    mode,
+    genreFilter,
+    createdAt: serverTimestamp(),
+  })
+  return created.id
 }
 
 export function renameShelf(uid: string, shelfId: string, name: string) {
