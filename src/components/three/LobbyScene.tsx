@@ -10,6 +10,7 @@ import { Door } from './Door'
 import { Fireplace } from './Fireplace'
 import { Candle } from './Candle'
 import { Book } from './Book'
+import { WallTorch } from './WallTorch'
 
 const ROOM_SIZE = 6
 const ROOM_HEIGHT = 3
@@ -84,6 +85,10 @@ function LobbyContents({
           onEnterLibrary()
         }}
       />
+
+      {/* torches flanking the library door, mounted on the same wall at head height */}
+      <WallTorch position={[-half, 1.3, -1]} rotation={[0, Math.PI / 2, 0]} />
+      <WallTorch position={[-half, 1.3, 1]} rotation={[0, Math.PI / 2, 0]} />
 
       {/* door behind the user: logout */}
       <Door
