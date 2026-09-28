@@ -25,6 +25,8 @@ export interface LibraryTheme {
   bookCoverColor: string
   bookPageColor: string
   bookTitleColor: string
+  // Leather bindings for the real books on the library bookcases, picked per book.
+  bookSpineColors: string[]
   labelColor: string
   ambientIntensity: number
 }
@@ -53,6 +55,16 @@ export const oakTheme: LibraryTheme = {
   bookCoverColor: '#4169e1',
   bookPageColor: '#ede4d3',
   bookTitleColor: '#f3e3b0',
+  bookSpineColors: [
+    '#a8402f',
+    '#3f7a52',
+    '#4a67a8',
+    '#b8863f',
+    '#8a4575',
+    '#c9a24f',
+    '#3f6f78',
+    '#a35a28',
+  ],
   labelColor: '#374151',
   ambientIntensity: 0.6,
 }

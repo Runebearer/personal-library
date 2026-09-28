@@ -14,7 +14,7 @@ export type BookGroup = { heading: string | null; books: Book[] }
 
 // Applies the shelf's sorting mode: custom keeps insertion order, title sorts, genre
 // filters, author groups by first author.
-function groupBooks(books: Book[], shelf: Shelf | null): BookGroup[] {
+export function groupBooks(books: Book[], shelf: Shelf | null): BookGroup[] {
   if (!shelf || shelf.mode === 'custom') {
     return [{ heading: null, books }]
   }
@@ -40,12 +40,25 @@ function groupBooks(books: Book[], shelf: Shelf | null): BookGroup[] {
     .map(([heading, groupBooks]) => ({ heading, books: groupBooks }))
 }
 
+// Data the previous page already had (e.g. the library room), handed over through the
+// router state so the shelf page opens filled: the shelf and its books, plus the whole
+// library for the 3D close-up, which rebuilds the library room around the bookcase.
+export type ShelfPreview = {
+  shelf: Shelf
+  books: Book[]
+  shelves?: Shelf[]
+  booksByShelf?: Record<string, Book[]>
+}
+
 // A shelf, its books (raw and grouped by the shelf's mode) and the actions on them —
-// shared by the classic and 3D shelf views.
-export function useShelfBooks(shelfId: string | undefined) {
+// shared by the classic and 3D shelf views. `preview` (data the previous page already had,
+// e.g. the library room) is shown until the live subscriptions answer, so the page opens
+// filled instead of empty.
+export function useShelfBooks(shelfId: string | undefined, preview?: ShelfPreview) {
   const { user } = useAuth()
-  const [shelf, setShelf] = useState<Shelf | null>(null)
-  const [books, setBooks] = useState<Book[]>([])
+  const usablePreview = preview && preview.shelf.id === shelfId ? preview : undefined
+  const [shelf, setShelf] = useState<Shelf | null>(usablePreview?.shelf ?? null)
+  const [books, setBooks] = useState<Book[]>(usablePreview?.books ?? [])
 
   useEffect(() => {
     if (!user || !shelfId) return

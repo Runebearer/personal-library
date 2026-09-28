@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import * as THREE from 'three'
 import { useLibraryTheme } from '../../three/ThemeContext'
+import { useTextTexture } from '../../three/textTexture'
+import { isDragRelease } from '../../three/pointer'
 
 const BOOK_WIDTH = 0.035 // spine thickness
 const BOOK_HEIGHT = 0.24
@@ -18,60 +20,12 @@ const HOVER_GLOW = '#fdf6e3'
 // back-face only, which pokes out as a thin rim around the real geometry on hover.
 const OUTLINE_MARGIN = 0.01
 
-// Title printed on the front cover: drawn into a canvas texture (no font file to load, so it
-// works offline like the rest of the PWA), on a plane hovering just off the +x cover face.
-// Unlit (basic material) so the gilt lettering stays readable in the dim lobby.
+// Title printed on the front cover, on a plane hovering just off the +x cover face. Unlit
+// (basic material) so the gilt lettering stays readable in the dim scenes.
 const TITLE_INSET = 0.02
 const TITLE_OFFSET = 0.0008
 const TITLE_CANVAS_WIDTH = 256
 const TITLE_CANVAS_HEIGHT = Math.round((TITLE_CANVAS_WIDTH * BOOK_HEIGHT) / BOOK_DEPTH)
-const TITLE_FONT = 'bold 60px Georgia, "Times New Roman", serif'
-const TITLE_LINE_HEIGHT = 70
-
-// Greedy word wrap to the canvas width (minus a margin).
-function wrapTitle(ctx: CanvasRenderingContext2D, title: string, maxWidth: number) {
-  const lines: string[] = []
-  let line = ''
-  for (const word of title.split(/\s+/)) {
-    const candidate = line ? `${line} ${word}` : word
-    if (line && ctx.measureText(candidate).width > maxWidth) {
-      lines.push(line)
-      line = word
-    } else {
-      line = candidate
-    }
-  }
-  if (line) lines.push(line)
-  return lines
-}
-
-function useTitleTexture(title: string | undefined, color: string) {
-  const texture = useMemo(() => {
-    if (!title) return null
-    const canvas = document.createElement('canvas')
-    canvas.width = TITLE_CANVAS_WIDTH
-    canvas.height = TITLE_CANVAS_HEIGHT
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return null
-
-    ctx.font = TITLE_FONT
-    ctx.fillStyle = color
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    const lines = wrapTitle(ctx, title, TITLE_CANVAS_WIDTH * 0.85)
-    const top = TITLE_CANVAS_HEIGHT / 2 - ((lines.length - 1) * TITLE_LINE_HEIGHT) / 2
-    lines.forEach((l, i) => ctx.fillText(l, TITLE_CANVAS_WIDTH / 2, top + i * TITLE_LINE_HEIGHT))
-
-    const tex = new THREE.CanvasTexture(canvas)
-    tex.colorSpace = THREE.SRGBColorSpace
-    tex.anisotropy = 4
-    return tex
-  }, [title, color])
-
-  useEffect(() => () => texture?.dispose(), [texture])
-
-  return texture
-}
 
 // A single closed book, standing upright with its spine facing +z (the same "faces the
 // room" convention as Door/Desk). Meant to be placed on shelves or a countertop; position
@@ -94,7 +48,12 @@ export function Book({
 }) {
   const theme = useLibraryTheme()
   const [hovered, setHovered] = useState(false)
-  const titleTexture = useTitleTexture(title, theme.bookTitleColor)
+  const titleTexture = useTextTexture(title, {
+    width: TITLE_CANVAS_WIDTH,
+    height: TITLE_CANVAS_HEIGHT,
+    color: theme.bookTitleColor,
+    fontSize: 60,
+  })
 
   return (
     <group position={position} rotation={rotation}>
@@ -104,6 +63,7 @@ export function Book({
           onSelect &&
           ((e) => {
             e.stopPropagation()
+            if (isDragRelease(e)) return
             onSelect()
           })
         }

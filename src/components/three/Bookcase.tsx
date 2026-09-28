@@ -1,0 +1,316 @@
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useThree } from '@react-three/fiber'
+import { useTexture } from '@react-three/drei'
+import * as THREE from 'three'
+import { useLibraryTheme } from '../../three/ThemeContext'
+import { isDragRelease } from '../../three/pointer'
+import { RectGlow, type GlowRect } from './RectGlow'
+import { SceneLabel } from './SceneLabel'
+import type { Book } from '../../types'
+
+export const BOOKCASE_WIDTH = 1.2
+export const BOOKCASE_HEIGHT = 2.1
+export const BOOKCASE_DEPTH = 0.32
+const PANEL = 0.04 // thickness of every board
+const ROWS = 5
+const ROW_PITCH = (BOOKCASE_HEIGHT - PANEL) / ROWS
+const INNER_WIDTH = BOOKCASE_WIDTH - PANEL * 2
+const BOOK_GAP = 0.002
+
+// Every book is drawn from one instanced mesh, so this caps what a bookcase can show.
+const MAX_BOOKS = 200
+
+// The shelf's name floats above the bookcase, like Door's label (same offset).
+const LABEL_OFFSET = 0.15
+// Full height including room for the name label — for framing the bookcase with the camera.
+export const BOOKCASE_TOTAL_HEIGHT = BOOKCASE_HEIGHT + LABEL_OFFSET * 2
+
+// Front silhouette that the hover halo traces, like Door's.
+const GLOW_RECTS: GlowRect[] = [
+  { center: [0, BOOKCASE_HEIGHT / 2], size: [BOOKCASE_WIDTH, BOOKCASE_HEIGHT] },
+]
+
+// Cheap deterministic hash so a book keeps the same color/size across renders and devices.
+function hash(str: string) {
+  let h = 2166136261
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
+type BookInstance = {
+  book: Book
+  position: [number, number, number]
+  size: [number, number, number]
+  color: string
+}
+
+// Lays the books out left to right, row by row from the top, spines facing +z. Books
+// that don't fit in the ROWS rows are left off.
+function layoutBooks(books: Book[], palette: string[]): BookInstance[] {
+  const instances: BookInstance[] = []
+  let row = 0
+  let x = -INNER_WIDTH / 2
+
+  for (const book of books) {
+    if (instances.length >= MAX_BOOKS) break
+    const h = hash(book.id)
+    const thickness = 0.03 + ((h >> 3) % 26) / 1000 // 0.030–0.055
+    const height = 0.22 + ((h >> 8) % 9) / 100 // 0.22–0.30
+    const depth = 0.16 + ((h >> 13) % 5) / 100 // 0.16–0.20
+
+    if (x + thickness > INNER_WIDTH / 2) {
+      row++
+      x = -INNER_WIDTH / 2
+    }
+    if (row >= ROWS) break
+
+    // row 0 is the top compartment
+    const floorY = (ROWS - 1 - row) * ROW_PITCH + PANEL
+    instances.push({
+      book,
+      position: [x + thickness / 2, floorY + height / 2, BOOKCASE_DEPTH / 2 - depth / 2 - 0.02],
+      size: [thickness, height, depth],
+      color: palette[h % palette.length],
+    })
+    x += thickness + BOOK_GAP
+  }
+
+  return instances
+}
+
+// All the books of a bookcase, as one instanced mesh. With onSelectBook, each book is its
+// own click target: hovering one shows the Door-style halo around its spine and its title.
+function Books({ books, onSelectBook }: { books: Book[]; onSelectBook?: (book: Book) => void }) {
+  const theme = useLibraryTheme()
+  const { invalidate } = useThree()
+  const meshRef = useRef<THREE.InstancedMesh>(null)
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const instances = useMemo(
+    () => layoutBooks(books, theme.bookSpineColors),
+    [books, theme.bookSpineColors],
+  )
+  const hovered = hoveredIndex !== null ? instances[hoveredIndex] : undefined
+
+  useLayoutEffect(() => {
+    const mesh = meshRef.current
+    if (!mesh) return
+    const matrix = new THREE.Matrix4()
+    const color = new THREE.Color()
+    instances.forEach((b, i) => {
+      matrix.compose(
+        new THREE.Vector3(...b.position),
+        new THREE.Quaternion(),
+        new THREE.Vector3(...b.size),
+      )
+      mesh.setMatrixAt(i, matrix)
+      mesh.setColorAt(i, color.set(b.color))
+    })
+    mesh.count = instances.length
+    mesh.instanceMatrix.needsUpdate = true
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+    mesh.computeBoundingSphere()
+    invalidate()
+  }, [instances, invalidate])
+
+  useEffect(() => setHoveredIndex(null), [instances])
+
+  return (
+    <>
+      <instancedMesh
+        ref={meshRef}
+        args={[undefined, undefined, MAX_BOOKS]}
+        raycast={onSelectBook ? undefined : () => null}
+        onClick={
+          onSelectBook &&
+          ((e) => {
+            e.stopPropagation()
+            if (isDragRelease(e) || e.instanceId === undefined) return
+            const instance = instances[e.instanceId]
+            if (instance) onSelectBook(instance.book)
+          })
+        }
+        onPointerMove={
+          onSelectBook &&
+          ((e) => {
+            e.stopPropagation()
+            if (e.instanceId !== undefined && e.instanceId !== hoveredIndex) {
+              setHoveredIndex(e.instanceId)
+              invalidate()
+            }
+          })
+        }
+        onPointerOut={onSelectBook && (() => setHoveredIndex(null))}
+      >
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial />
+      </instancedMesh>
+
+      {hovered && (
+        <>
+          <RectGlow
+            rects={[
+              {
+                center: [hovered.position[0], hovered.position[1]],
+                size: [hovered.size[0], hovered.size[1]],
+              },
+            ]}
+            position={[0, 0, hovered.position[2] + hovered.size[2] / 2 + 0.002]}
+          />
+          <SceneLabel
+            position={[
+              hovered.position[0],
+              hovered.position[1] + hovered.size[1] / 2 + 0.05,
+              hovered.position[2] + hovered.size[2] / 2,
+            ]}
+            text={hovered.book.title}
+            distanceFactor={3}
+          />
+        </>
+      )}
+    </>
+  )
+}
+
+// The boards: sides, back, top, bottom and the ROWS-1 shelves in between.
+function useBoards() {
+  return useMemo(() => {
+    const vertical: { position: [number, number, number]; size: [number, number, number] }[] = [
+      {
+        position: [-(BOOKCASE_WIDTH - PANEL) / 2, BOOKCASE_HEIGHT / 2, 0],
+        size: [PANEL, BOOKCASE_HEIGHT, BOOKCASE_DEPTH],
+      },
+      {
+        position: [(BOOKCASE_WIDTH - PANEL) / 2, BOOKCASE_HEIGHT / 2, 0],
+        size: [PANEL, BOOKCASE_HEIGHT, BOOKCASE_DEPTH],
+      },
+      {
+        position: [0, BOOKCASE_HEIGHT / 2, -(BOOKCASE_DEPTH - PANEL) / 2],
+        size: [BOOKCASE_WIDTH, BOOKCASE_HEIGHT, PANEL],
+      },
+    ]
+    const horizontal = Array.from({ length: ROWS + 1 }, (_, i) => ({
+      position: [0, i * ROW_PITCH + PANEL / 2, 0] as [number, number, number],
+      size: [INNER_WIDTH, PANEL, BOOKCASE_DEPTH - PANEL] as [number, number, number],
+    }))
+    return { vertical, horizontal }
+  }, [])
+}
+
+function PlainFrame({ color }: { color: string }) {
+  const { vertical, horizontal } = useBoards()
+  return (
+    <>
+      {[...vertical, ...horizontal].map((b, i) => (
+        <mesh key={i} position={b.position} raycast={() => null}>
+          <boxGeometry args={b.size} />
+          <meshStandardMaterial color={color} />
+        </mesh>
+      ))}
+    </>
+  )
+}
+
+// Same wood as the lobby desk; horizontal boards get the grain turned 90° like Desk does.
+function TexturedFrame({ url }: { url: string }) {
+  const texture = useTexture(url)
+  const { vertical, horizontal } = useBoards()
+
+  useEffect(() => {
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.RepeatWrapping
+    texture.colorSpace = THREE.SRGBColorSpace
+    texture.needsUpdate = true
+  }, [texture])
+
+  const horizontalTexture = useMemo(() => {
+    const clone = texture.clone()
+    clone.wrapS = THREE.RepeatWrapping
+    clone.wrapT = THREE.RepeatWrapping
+    clone.colorSpace = THREE.SRGBColorSpace
+    clone.center.set(0.5, 0.5)
+    clone.rotation = Math.PI / 2
+    clone.needsUpdate = true
+    return clone
+  }, [texture])
+
+  return (
+    <>
+      {vertical.map((b, i) => (
+        <mesh key={`v${i}`} position={b.position} raycast={() => null}>
+          <boxGeometry args={b.size} />
+          <meshStandardMaterial map={texture} />
+        </mesh>
+      ))}
+      {horizontal.map((b, i) => (
+        <mesh key={`h${i}`} position={b.position} raycast={() => null}>
+          <boxGeometry args={b.size} />
+          <meshStandardMaterial map={horizontalTexture} />
+        </mesh>
+      ))}
+    </>
+  )
+}
+
+// One of the user's shelves as a piece of furniture: a wooden bookcase holding the shelf's
+// real books, with its name floating above it like a door's label. Front faces +z (same convention as Desk and
+// Door); position is the center of its footprint on the floor. Two ways to interact:
+// onSelect makes the whole bookcase one click target (an invisible box around it) with the
+// same hover halo as Door — the library room; onSelectBook makes each book clickable
+// instead — the shelf close-up.
+export function Bookcase({
+  position = [0, 0, 0],
+  rotation = [0, 0, 0],
+  name,
+  books,
+  onSelect,
+  onSelectBook,
+}: {
+  position?: [number, number, number]
+  rotation?: [number, number, number]
+  name: string
+  books: Book[]
+  onSelect?: () => void
+  onSelectBook?: (book: Book) => void
+}) {
+  const theme = useLibraryTheme()
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <group position={position} rotation={rotation}>
+      {theme.deskTexture ? (
+        <Suspense fallback={<PlainFrame color={theme.deskColor} />}>
+          <TexturedFrame url={theme.deskTexture} />
+        </Suspense>
+      ) : (
+        <PlainFrame color={theme.deskColor} />
+      )}
+
+      <Books books={books} onSelectBook={onSelectBook} />
+      <SceneLabel position={[0, BOOKCASE_HEIGHT + LABEL_OFFSET, BOOKCASE_DEPTH / 2]} text={name} />
+
+      {onSelect && (
+        <mesh
+          position={[0, BOOKCASE_HEIGHT / 2, 0]}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (isDragRelease(e)) return
+            onSelect()
+          }}
+          onPointerOver={(e) => {
+            e.stopPropagation()
+            setHovered(true)
+          }}
+          onPointerOut={() => setHovered(false)}
+        >
+          <boxGeometry args={[BOOKCASE_WIDTH + 0.02, BOOKCASE_HEIGHT + 0.02, BOOKCASE_DEPTH + 0.02]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      )}
+
+      {hovered && onSelect && <RectGlow rects={GLOW_RECTS} position={[0, 0, BOOKCASE_DEPTH / 2 + 0.002]} />}
+    </group>
+  )
+}

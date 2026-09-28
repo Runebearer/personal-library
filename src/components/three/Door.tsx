@@ -1,22 +1,22 @@
 import { Suspense, useEffect, useMemo, useState } from 'react'
-import { Html, useTexture } from '@react-three/drei'
+import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { useLibraryTheme } from '../../three/ThemeContext'
 import type { LibraryTheme } from '../../three/theme'
+import { isDragRelease } from '../../three/pointer'
+import { GLOW_RADIUS_STEPS, HOVER_GLOW } from '../../three/hoverGlow'
+import { SceneLabel } from './SceneLabel'
 
 const DOOR_HEIGHT = 2.1
 // The door texture bakes in its own stone arch, so geometry must match its aspect ratio.
 const DOOR_TEXTURE_ASPECT = 512 / 917
 const DOOR_WIDTH = DOOR_HEIGHT * DOOR_TEXTURE_ASPECT
 
-const HOVER_GLOW = '#fdf6e3'
-
 // How far, in source-texture texels, the glow extends past the door's alpha silhouette.
 // Wide/dense enough to bridge gaps between separated details (e.g. scattered rubble at
 // the door's base) that a tighter search would miss and leave unlit.
 const GLOW_WIDTH_TEXELS = 22
 const GLOW_DIRECTIONS = 20
-const GLOW_RADIUS_STEPS = 14
 
 // The glow mesh is enlarged beyond the door's own bounds (see uvScale below) so the halo
 // has room to render past texture edges the artwork touches, e.g. the rubble at the door's
@@ -131,6 +131,8 @@ function DoorOutlineGlow({ url }: { url: string }) {
   )
 }
 
+// A wall-mounted arched door with its name label. onSelect makes it clickable, with the
+// hover halo; without it the door is just decor.
 export function Door({
   position,
   rotation = [0, 0, 0],
@@ -140,7 +142,7 @@ export function Door({
   position: [number, number, number]
   rotation?: [number, number, number]
   label: string
-  onSelect: () => void
+  onSelect?: () => void
 }) {
   const theme = useLibraryTheme()
   const [hovered, setHovered] = useState(false)
@@ -149,15 +151,22 @@ export function Door({
     <group position={position} rotation={rotation}>
       <mesh
         position={[0, DOOR_HEIGHT / 2, 0.03]}
-        onClick={(e) => {
-          e.stopPropagation()
-          onSelect()
-        }}
-        onPointerOver={(e) => {
-          e.stopPropagation()
-          setHovered(true)
-        }}
-        onPointerOut={() => setHovered(false)}
+        onClick={
+          onSelect &&
+          ((e) => {
+            e.stopPropagation()
+            if (isDragRelease(e)) return
+            onSelect()
+          })
+        }
+        onPointerOver={
+          onSelect &&
+          ((e) => {
+            e.stopPropagation()
+            setHovered(true)
+          })
+        }
+        onPointerOut={onSelect && (() => setHovered(false))}
       >
         <planeGeometry args={[DOOR_WIDTH, DOOR_HEIGHT]} />
         {theme.doorTexture ? (
@@ -169,25 +178,13 @@ export function Door({
         )}
       </mesh>
 
-      {hovered && theme.doorTexture && (
+      {hovered && onSelect && theme.doorTexture && (
         <Suspense fallback={null}>
           <DoorOutlineGlow url={theme.doorTexture} />
         </Suspense>
       )}
 
-      <Html
-        position={[0, DOOR_HEIGHT + 0.15, 0.1]}
-        center
-        distanceFactor={6}
-        style={{ pointerEvents: 'none' }}
-      >
-        <span
-          className="whitespace-nowrap rounded-full bg-white/90 px-3 py-1 text-xs font-medium shadow-sm"
-          style={{ color: theme.labelColor }}
-        >
-          {label}
-        </span>
-      </Html>
+      <SceneLabel position={[0, DOOR_HEIGHT + 0.15, 0.1]} text={label} />
     </group>
   )
 }

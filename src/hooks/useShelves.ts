@@ -4,11 +4,12 @@ import { createShelf, deleteShelf, renameShelf, subscribeToShelves } from '../fi
 import type { Shelf, ShelfMode } from '../types'
 
 // The user's shelves plus the actions on them — shared by the classic and 3D library views
-// so both render the same data and behave identically.
-export function useShelves() {
+// so both render the same data and behave identically. `initial` (shelves the previous page
+// already had) is shown until the live subscription answers.
+export function useShelves(initial?: Shelf[]) {
   const { user } = useAuth()
-  const [shelves, setShelves] = useState<Shelf[]>([])
-  const [loaded, setLoaded] = useState(false)
+  const [shelves, setShelves] = useState<Shelf[]>(initial ?? [])
+  const [loaded, setLoaded] = useState(initial !== undefined)
 
   useEffect(() => {
     if (!user) return
