@@ -24,6 +24,7 @@ export interface LibraryTheme {
   candleTexture?: string
   bookCoverColor: string
   bookPageColor: string
+  bookTitleColor: string
   labelColor: string
   ambientIntensity: number
 }
@@ -51,6 +52,7 @@ export const oakTheme: LibraryTheme = {
   candleTexture: '/textures/candle-01.webp',
   bookCoverColor: '#4169e1',
   bookPageColor: '#ede4d3',
+  bookTitleColor: '#f3e3b0',
   labelColor: '#374151',
   ambientIntensity: 0.6,
 }

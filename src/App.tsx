@@ -1,12 +1,12 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { TransitionProvider } from './context/TransitionContext'
-import { ViewModeProvider, useViewMode } from './context/ViewModeContext'
+import { ViewModeProvider } from './context/ViewModeContext'
 import { isFirebaseConfigured } from './firebase/config'
 import { LoginPage } from './pages/LoginPage'
-import { VestibulePage } from './pages/VestibulePage'
-import { ShelvesPage } from './pages/ShelvesPage'
-import { ShelfDetailPage } from './pages/ShelfDetailPage'
+import { HomePage } from './pages/HomePage'
+import { LibraryPage } from './pages/LibraryPage'
+import { ShelfPage } from './pages/ShelfPage'
 
 function MissingFirebaseConfig() {
   return (
@@ -57,11 +57,6 @@ function RedirectIfAuthed({ children }: { children: JSX.Element }) {
   return children
 }
 
-function HomeRoute() {
-  const { viewMode } = useViewMode()
-  return viewMode === '3d' ? <VestibulePage /> : <ShelvesPage />
-}
-
 export function App() {
   if (!isFirebaseConfigured) {
     return <MissingFirebaseConfig />
@@ -83,7 +78,7 @@ export function App() {
             path="/"
             element={
               <RequireAuth>
-                <HomeRoute />
+                <HomePage />
               </RequireAuth>
             }
           />
@@ -91,7 +86,7 @@ export function App() {
             path="/library"
             element={
               <RequireAuth>
-                <ShelvesPage />
+                <LibraryPage />
               </RequireAuth>
             }
           />
@@ -99,7 +94,7 @@ export function App() {
             path="/shelves/:shelfId"
             element={
               <RequireAuth>
-                <ShelfDetailPage />
+                <ShelfPage />
               </RequireAuth>
             }
           />

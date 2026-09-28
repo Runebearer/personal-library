@@ -70,10 +70,17 @@ function LobbyContents({
           z=[-half, -half+0.6], so -half+0.5 sits close to the front edge without overhanging */}
       <Candle position={[-0.4, 0.885, -half + 0.5]} />
 
-      {/* book standing on the desk's mid-height shelf — shelf top is at y=0.4375 (shelf
-          center 0.4125 + half its 0.05 thickness), spine facing the room like the desk.
-          Represents the "Mes livres préférés" custom shelf; onSelect navigates there. */}
-      <Book position={[-0.5, 0.4375, -half + 0.25]} onSelect={onSelectBook} />
+      {/* book standing on the counter just left of the candle (same y=0.885 counter top).
+          Turned a quarter-turn so its titled front cover (not its spine) faces the room, displayed like a
+          shop-window book; its cover is 0.16 wide, so x=-0.62 leaves a small gap to the
+          candlestick at x=-0.4.
+          Represents the favorites shelf (see useFavoritesShelf); onSelect opens it. */}
+      <Book
+        position={[-0.62, 0.885, -half + 0.45]}
+        rotation={[0, -Math.PI / 2, 0]}
+        title="Mes Favoris"
+        onSelect={onSelectBook}
+      />
 
       {/* door on the left wall: enters the library */}
       <Door

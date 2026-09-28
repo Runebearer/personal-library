@@ -1,11 +1,10 @@
-import { FormEvent, useEffect, useState } from 'react'
-import { useAuth } from '../context/AuthContext'
-import { createShelf, deleteShelf, renameShelf, subscribeToShelves } from '../firebase/firestore'
-import { signOut } from '../firebase/auth'
-import { ShelfCard } from '../components/ShelfCard'
-import { ViewModeToggle } from '../components/ViewModeToggle'
-import { GENRE_LIST } from '../lib/genre'
-import type { Shelf, ShelfMode } from '../types'
+import { FormEvent, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useShelves } from '../../hooks/useShelves'
+import { ShelfCard } from '../../components/ShelfCard'
+import { ViewModeToggle } from '../../components/ViewModeToggle'
+import { GENRE_LIST } from '../../lib/genre'
+import type { ShelfMode } from '../../types'
 
 const MODE_OPTIONS: { value: ShelfMode; label: string }[] = [
   { value: 'custom', label: 'Perso' },
@@ -14,44 +13,32 @@ const MODE_OPTIONS: { value: ShelfMode; label: string }[] = [
   { value: 'title', label: 'Titre' },
 ]
 
-export function ShelvesPage() {
-  const { user } = useAuth()
-  const [shelves, setShelves] = useState<Shelf[]>([])
+export function LibraryClassic() {
+  const { shelves, create, rename, remove } = useShelves()
   const [newShelfName, setNewShelfName] = useState('')
   const [newShelfMode, setNewShelfMode] = useState<ShelfMode>('custom')
   const [newShelfGenre, setNewShelfGenre] = useState(GENRE_LIST[0])
 
-  useEffect(() => {
-    if (!user) return
-    return subscribeToShelves(user.uid, setShelves)
-  }, [user])
-
   async function handleCreateShelf(e: FormEvent) {
     e.preventDefault()
-    if (!user || !newShelfName.trim()) return
+    if (!newShelfName.trim()) return
     const genreFilter = newShelfMode === 'genre' ? newShelfGenre : null
-    await createShelf(user.uid, newShelfName.trim(), newShelfMode, genreFilter)
+    await create(newShelfName, newShelfMode, genreFilter)
     setNewShelfName('')
     setNewShelfMode('custom')
     setNewShelfGenre(GENRE_LIST[0])
   }
 
-  function handleDeleteShelf(shelfId: string) {
-    if (!user) return
-    if (!confirm('Supprimer cette étagère et tous ses livres ?')) return
-    deleteShelf(user.uid, shelfId)
-  }
-
   return (
     <div className="min-h-dvh bg-gray-50 pb-8">
       <header className="flex items-center justify-between px-4 py-4">
-        <h1 className="text-xl font-semibold text-gray-900">Mes étagères</h1>
         <div className="flex items-center gap-3">
-          <ViewModeToggle />
-          <button type="button" onClick={() => signOut()} className="text-sm text-gray-500">
-            Déconnexion
-          </button>
+          <Link to="/" className="text-gray-500">
+            ‹
+          </Link>
+          <h1 className="text-xl font-semibold text-gray-900">Mes étagères</h1>
         </div>
+        <ViewModeToggle />
       </header>
 
       <form onSubmit={handleCreateShelf} className="flex flex-col gap-2 px-4 pb-4">
@@ -108,8 +95,8 @@ export function ShelvesPage() {
           <ShelfCard
             key={shelf.id}
             shelf={shelf}
-            onRename={(name) => user && renameShelf(user.uid, shelf.id, name)}
-            onDelete={() => handleDeleteShelf(shelf.id)}
+            onRename={(name) => rename(shelf.id, name)}
+            onDelete={() => remove(shelf.id)}
           />
         ))}
       </div>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import type { Book } from '../types'
+import type { Book } from '../../types'
 
 const BOOK_WIDTH = 0.9
 const BOOK_HEIGHT = 1.3
@@ -62,7 +62,7 @@ function BookMesh({ book, x, onSelect }: { book: Book; x: number; onSelect: (boo
   )
 }
 
-export function Shelf3D({
+export function Shelf3DView({
   books,
   onSelectBook,
 }: {

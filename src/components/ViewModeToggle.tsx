@@ -1,18 +1,15 @@
-import { useNavigate } from 'react-router-dom'
 import { useTransition } from '../context/TransitionContext'
 import { useViewMode } from '../context/ViewModeContext'
 
+// Switches between the classic and 3D rendering of the current page. Every route has both
+// views, so the user stays where they are — only the rendering changes.
 export function ViewModeToggle({ className }: { className?: string }) {
   const { viewMode, setViewMode } = useViewMode()
   const { fadeAndNavigate } = useTransition()
-  const navigate = useNavigate()
 
   function handleToggle() {
     const next = viewMode === '3d' ? 'classic' : '3d'
-    fadeAndNavigate(() => {
-      setViewMode(next)
-      navigate('/')
-    })
+    fadeAndNavigate(() => setViewMode(next))
   }
 
   return (
