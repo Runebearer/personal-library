@@ -96,6 +96,7 @@ export function AddBookModal({
         title: '',
         subtitle: null,
         tome: null,
+        seriesId: null,
         authors: [],
         coverUrl: null,
         genre: null,

@@ -14,7 +14,7 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import { db } from './config'
-import type { Book, BookMetadata, Shelf, ShelfMode } from '../types'
+import type { Book, BookMetadata, Series, Shelf, ShelfMode } from '../types'
 
 function shelvesRef(uid: string) {
   return collection(db, 'users', uid, 'shelves')
@@ -22,6 +22,10 @@ function shelvesRef(uid: string) {
 
 function shelfDocRef(uid: string, shelfId: string) {
   return doc(db, 'users', uid, 'shelves', shelfId)
+}
+
+function seriesRef(uid: string) {
+  return collection(db, 'users', uid, 'series')
 }
 
 function booksRef(uid: string, shelfId: string) {
@@ -104,6 +108,7 @@ export function subscribeToBooks(
           title: data.title as string,
           subtitle: (data.subtitle as string | null) ?? null,
           tome: (data.tome as string | null) ?? null,
+          seriesId: (data.seriesId as string | null) ?? null,
           authors: (data.authors as string[]) ?? [],
           coverUrl: (data.coverUrl as string | null) ?? null,
           genre: (data.genre as string | null) ?? null,
@@ -128,7 +133,10 @@ export function updateBook(
   shelfId: string,
   bookId: string,
   patch: Partial<
-    Pick<Book, 'title' | 'subtitle' | 'tome' | 'authors' | 'genre' | 'synopsis' | 'rating'>
+    Pick<
+      Book,
+      'title' | 'subtitle' | 'tome' | 'seriesId' | 'authors' | 'genre' | 'synopsis' | 'rating'
+    >
   >,
 ) {
   return updateDoc(doc(db, 'users', uid, 'shelves', shelfId, 'books', bookId), patch)
@@ -155,6 +163,7 @@ export async function moveBook(
     title: data.title,
     subtitle: data.subtitle ?? null,
     tome: data.tome ?? null,
+    seriesId: data.seriesId ?? null,
     authors: data.authors,
     coverUrl: data.coverUrl,
     genre: data.genre,
@@ -164,4 +173,25 @@ export async function moveBook(
   })
   batch.delete(fromRef)
   await batch.commit()
+}
+
+export function subscribeToSeries(uid: string, callback: (series: Series[]) => void) {
+  const q = query(seriesRef(uid), orderBy('name'))
+  return onSnapshot(q, (snapshot) => {
+    callback(
+      snapshot.docs.map((d) => {
+        const data = d.data()
+        return {
+          id: d.id,
+          name: data.name as string,
+          createdAt: (data.createdAt as Timestamp | null)?.toMillis() ?? 0,
+        }
+      }),
+    )
+  })
+}
+
+export async function createSeries(uid: string, name: string): Promise<string> {
+  const created = await addDoc(seriesRef(uid), { name, createdAt: serverTimestamp() })
+  return created.id
 }

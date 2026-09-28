@@ -8,12 +8,20 @@ export interface Shelf {
   createdAt: number
 }
 
+// A series of books (e.g. a manga's volumes), shared across shelves. Books point to it by id.
+export interface Series {
+  id: string
+  name: string
+  createdAt: number
+}
+
 export interface Book {
   id: string
   isbn: string
   title: string
   subtitle: string | null
   tome: string | null
+  seriesId: string | null
   authors: string[]
   coverUrl: string | null
   genre: string | null
@@ -27,6 +35,7 @@ export interface BookMetadata {
   title: string
   subtitle: string | null
   tome: string | null
+  seriesId: string | null
   authors: string[]
   coverUrl: string | null
   genre: string | null

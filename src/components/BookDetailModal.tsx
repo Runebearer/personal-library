@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { RatingStars } from './RatingStars'
 import { GENRE_LIST } from '../lib/genre'
+import { useSeries } from '../hooks/useSeries'
 import type { BookMetadata } from '../types'
+
+// Value of the series <select> meaning "create a new series with the typed name".
+const NEW_SERIES = '__new__'
 
 export function BookDetailModal({
   metadata,
@@ -21,6 +25,12 @@ export function BookDetailModal({
   const [subtitle, setSubtitle] = useState(metadata.subtitle ?? '')
   const [showTome, setShowTome] = useState(Boolean(metadata.tome))
   const [tome, setTome] = useState(metadata.tome ?? '')
+  const { series, findOrCreate } = useSeries()
+  const [showSeries, setShowSeries] = useState(Boolean(metadata.seriesId))
+  // '' = no series, NEW_SERIES = create one named newSeriesName, otherwise an existing id
+  const [seriesChoice, setSeriesChoice] = useState(metadata.seriesId ?? '')
+  const [newSeriesName, setNewSeriesName] = useState('')
+  const [saving, setSaving] = useState(false)
   const [authors, setAuthors] = useState(metadata.authors.length > 0 ? metadata.authors : [''])
   const [genre, setGenre] = useState(metadata.genre ?? '')
   const [synopsis, setSynopsis] = useState(metadata.synopsis ?? '')
@@ -39,7 +49,20 @@ export function BookDetailModal({
     setAuthors((prev) => prev.filter((_, i) => i !== index))
   }
 
-  function handleConfirm() {
+  function handleSeriesChange(value: string) {
+    setSeriesChoice(value)
+    // a book in a series usually has a volume number: offer the field right away
+    if (value && value !== NEW_SERIES) setShowTome(true)
+  }
+
+  // The series id to save: the chosen one, or a newly created series (reusing an existing
+  // one with the same name rather than duplicating it).
+  async function resolveSeriesId(): Promise<string | null> {
+    if (seriesChoice !== NEW_SERIES) return seriesChoice || null
+    return findOrCreate(newSeriesName)
+  }
+
+  async function handleConfirm() {
     const trimmedTitle = title.trim()
     const authorsList = authors.map((a) => a.trim()).filter(Boolean)
 
@@ -47,12 +70,28 @@ export function BookDetailModal({
       setError("Le titre, l'auteur et le genre sont obligatoires.")
       return
     }
+    if (seriesChoice === NEW_SERIES && !newSeriesName.trim()) {
+      setError('Donne un nom à la nouvelle série.')
+      return
+    }
+
+    setSaving(true)
+    let seriesId: string | null
+    try {
+      seriesId = await resolveSeriesId()
+    } catch {
+      setError('Impossible de créer la série. Réessaie plus tard.')
+      setSaving(false)
+      return
+    }
+    setSaving(false)
 
     onConfirm({
       ...metadata,
       title: trimmedTitle,
       subtitle: subtitle.trim() || null,
       tome: tome.trim() || null,
+      seriesId,
       authors: authorsList,
       genre,
       synopsis: synopsis.trim() || null,
@@ -121,6 +160,51 @@ export function BookDetailModal({
             )}
           </div>
         </div>
+
+        {showSeries ? (
+          <div className="flex flex-col gap-2">
+            <label className="flex flex-col gap-1 text-sm text-gray-600">
+              Série
+              <select
+                value={seriesChoice}
+                onChange={(e) => handleSeriesChange(e.target.value)}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
+              >
+                <option value="">Aucune série</option>
+                {/* the book's series while the list is still loading */}
+                {seriesChoice &&
+                  seriesChoice !== NEW_SERIES &&
+                  !series.some((s) => s.id === seriesChoice) && (
+                    <option value={seriesChoice}>…</option>
+                  )}
+                {series.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+                <option value={NEW_SERIES}>+ Nouvelle série…</option>
+              </select>
+            </label>
+            {seriesChoice === NEW_SERIES && (
+              <input
+                type="text"
+                autoFocus
+                value={newSeriesName}
+                onChange={(e) => setNewSeriesName(e.target.value)}
+                placeholder="Nom de la nouvelle série"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
+              />
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowSeries(true)}
+            className="self-start text-sm text-gray-500"
+          >
+            + Série
+          </button>
+        )}
 
         <div className="flex flex-col gap-2">
           <span className="text-sm text-gray-600">Auteur(s) *</span>
@@ -191,9 +275,10 @@ export function BookDetailModal({
         <button
           type="button"
           onClick={handleConfirm}
-          className="rounded-lg bg-gray-900 py-2 text-white"
+          disabled={saving}
+          className="rounded-lg bg-gray-900 py-2 text-white disabled:opacity-60"
         >
-          {confirmLabel}
+          {saving ? 'Enregistrement…' : confirmLabel}
         </button>
         {onMoveToShelf && (
           <button

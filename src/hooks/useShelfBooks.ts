@@ -83,6 +83,7 @@ export function useShelfBooks(shelfId: string | undefined, preview?: ShelfPrevie
       title: metadata.title,
       subtitle: metadata.subtitle,
       tome: metadata.tome,
+      seriesId: metadata.seriesId,
       authors: metadata.authors,
       genre: metadata.genre,
       synopsis: metadata.synopsis,
