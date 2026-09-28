@@ -1,10 +1,20 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTransition } from '../../context/TransitionContext'
 import { useShelves } from '../../hooks/useShelves'
 import { useBooksByShelf } from '../../hooks/useBooksByShelf'
 import { ShelfManager } from '../../components/ShelfManager'
 import { ViewModeToggle } from '../../components/ViewModeToggle'
+import type { BookcaseRef } from '../../components/three/LibraryScene'
+import type { Book, Shelf } from '../../types'
+
+// Handed over through the router state by a shelf close-up zooming back out: the library
+// data (so the room opens filled) and the bookcase it comes from (so it opens facing it).
+export type LibraryHandover = {
+  shelves: Shelf[]
+  booksByShelf: Record<string, Book[]>
+  returningFrom: BookcaseRef
+}
 
 // The shelf close-up the bookcases lead to — preloaded so the crossfade into it doesn't
 // wait on a network round trip.
@@ -22,8 +32,10 @@ const overlayButtonClass =
 export function Library3D() {
   const navigate = useNavigate()
   const { fadeAndNavigate, crossfadeAndNavigate } = useTransition()
-  const { shelves, loaded } = useShelves()
-  const booksByShelf = useBooksByShelf(shelves)
+  const location = useLocation()
+  const handover = (location.state as { library?: LibraryHandover } | null)?.library
+  const { shelves, loaded } = useShelves(handover?.shelves)
+  const booksByShelf = useBooksByShelf(shelves, handover?.booksByShelf)
   const [managing, setManaging] = useState(false)
 
   useEffect(() => {
@@ -44,10 +56,11 @@ export function Library3D() {
         <LibraryScene
           shelves={shelves}
           booksByShelf={booksByShelf}
-          onSelectShelf={(shelf, snapshot) =>
+          returningFrom={handover?.returningFrom}
+          onSelectShelf={(shelf, part, snapshot) =>
             crossfadeAndNavigate(snapshot, () =>
               // hand the shelf and its books over so the close-up opens already filled
-              navigate(`/shelves/${shelf.id}`, {
+              navigate(`/shelves/${shelf.id}${part > 0 ? `?meuble=${part + 1}` : ''}`, {
                 state: {
                   preview: { shelf, books: booksByShelf[shelf.id] ?? [], shelves, booksByShelf },
                 },

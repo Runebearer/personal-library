@@ -10,14 +10,13 @@ import type { Book } from '../../types'
 // Each candle is a point light, so only every other bookcase gets one, up to this many.
 const MAX_CANDLES = 6
 
-// The library room itself — walls, lights, one bookcase per shelf, candles, the door back
+// The library room itself — walls, lights, the shelves' bookcases, candles, the door back
 // to the lobby — without any camera. Both the library view and the shelf close-up render
 // this same room (only the camera and what's clickable differ), so moving from one to the
 // other shows exactly the same walls, floor, lighting and decor.
 export function LibraryRoom({
   half,
   placements,
-  booksByShelf,
   onSelectBookcase,
   focusedShelfId,
   onSelectBook,
@@ -25,10 +24,9 @@ export function LibraryRoom({
 }: {
   half: number
   placements: Placement[]
-  booksByShelf: Record<string, Book[]>
   // library view: every bookcase is one click target
   onSelectBookcase?: (placement: Placement) => void
-  // close-up: only the focused bookcase's books are clickable
+  // close-up: only the focused shelf's books (in any of its bookcases) are clickable
   focusedShelfId?: string
   onSelectBook?: (book: Book) => void
   onExit?: () => void
@@ -47,12 +45,12 @@ export function LibraryRoom({
       <Room size={half * 2} height={ROOM_HEIGHT} />
 
       {placements.map((p, i) => (
-        <group key={p.shelf.id}>
+        <group key={`${p.shelf.id}:${p.part}`}>
           <Bookcase
             position={p.position}
             rotation={[0, p.rotationY, 0]}
             name={p.shelf.name}
-            books={booksByShelf[p.shelf.id] ?? []}
+            books={p.books}
             onSelect={onSelectBookcase && (() => onSelectBookcase(p))}
             onSelectBook={p.shelf.id === focusedShelfId ? onSelectBook : undefined}
           />

@@ -6,19 +6,20 @@ import { useLibraryTheme } from '../../three/ThemeContext'
 import { isDragRelease } from '../../three/pointer'
 import { RectGlow, type GlowRect } from './RectGlow'
 import { SceneLabel } from './SceneLabel'
+import {
+  BOOKCASE_DEPTH,
+  BOOKCASE_HEIGHT,
+  BOOKCASE_WIDTH,
+  INNER_WIDTH,
+  MAX_BOOKS,
+  PANEL,
+  ROW_PITCH,
+  ROWS,
+  layoutBooks,
+} from '../../three/bookcaseLayout'
 import type { Book } from '../../types'
 
-export const BOOKCASE_WIDTH = 1.2
-export const BOOKCASE_HEIGHT = 2.1
-export const BOOKCASE_DEPTH = 0.32
-const PANEL = 0.04 // thickness of every board
-const ROWS = 5
-const ROW_PITCH = (BOOKCASE_HEIGHT - PANEL) / ROWS
-const INNER_WIDTH = BOOKCASE_WIDTH - PANEL * 2
-const BOOK_GAP = 0.002
-
-// Every book is drawn from one instanced mesh, so this caps what a bookcase can show.
-const MAX_BOOKS = 200
+export { BOOKCASE_DEPTH, BOOKCASE_HEIGHT, BOOKCASE_WIDTH }
 
 // The shelf's name floats above the bookcase, like Door's label (same offset).
 const LABEL_OFFSET = 0.15
@@ -29,57 +30,6 @@ export const BOOKCASE_TOTAL_HEIGHT = BOOKCASE_HEIGHT + LABEL_OFFSET * 2
 const GLOW_RECTS: GlowRect[] = [
   { center: [0, BOOKCASE_HEIGHT / 2], size: [BOOKCASE_WIDTH, BOOKCASE_HEIGHT] },
 ]
-
-// Cheap deterministic hash so a book keeps the same color/size across renders and devices.
-function hash(str: string) {
-  let h = 2166136261
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i)
-    h = Math.imul(h, 16777619)
-  }
-  return h >>> 0
-}
-
-type BookInstance = {
-  book: Book
-  position: [number, number, number]
-  size: [number, number, number]
-  color: string
-}
-
-// Lays the books out left to right, row by row from the top, spines facing +z. Books
-// that don't fit in the ROWS rows are left off.
-function layoutBooks(books: Book[], palette: string[]): BookInstance[] {
-  const instances: BookInstance[] = []
-  let row = 0
-  let x = -INNER_WIDTH / 2
-
-  for (const book of books) {
-    if (instances.length >= MAX_BOOKS) break
-    const h = hash(book.id)
-    const thickness = 0.03 + ((h >> 3) % 26) / 1000 // 0.030–0.055
-    const height = 0.22 + ((h >> 8) % 9) / 100 // 0.22–0.30
-    const depth = 0.16 + ((h >> 13) % 5) / 100 // 0.16–0.20
-
-    if (x + thickness > INNER_WIDTH / 2) {
-      row++
-      x = -INNER_WIDTH / 2
-    }
-    if (row >= ROWS) break
-
-    // row 0 is the top compartment
-    const floorY = (ROWS - 1 - row) * ROW_PITCH + PANEL
-    instances.push({
-      book,
-      position: [x + thickness / 2, floorY + height / 2, BOOKCASE_DEPTH / 2 - depth / 2 - 0.02],
-      size: [thickness, height, depth],
-      color: palette[h % palette.length],
-    })
-    x += thickness + BOOK_GAP
-  }
-
-  return instances
-}
 
 // All the books of a bookcase, as one instanced mesh. With onSelectBook, each book is its
 // own click target: hovering one shows the Door-style halo around its spine and its title.

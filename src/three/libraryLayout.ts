@@ -1,8 +1,20 @@
 import * as THREE from 'three'
-import { BOOKCASE_DEPTH, BOOKCASE_WIDTH } from '../components/three/Bookcase'
-import type { Shelf } from '../types'
+import { BOOKCASE_DEPTH, BOOKCASE_WIDTH, splitIntoBookcases } from './bookcaseLayout'
+import type { Book, Shelf } from '../types'
 
 export const ROOM_HEIGHT = 3
+
+// The library view's camera: it turns around LIBRARY_VIEW_CENTER at LIBRARY_VIEW_RADIUS (with
+// inverted controls, so it feels like turning one's head from the center of the room).
+export const LIBRARY_FOV = 60
+export const LIBRARY_VIEW_CENTER = new THREE.Vector3(0, 1.6, 0)
+export const LIBRARY_VIEW_RADIUS = 1.2
+
+// Library camera pose looking straight at a bookcase facing `normal` — where the camera
+// starts when coming back from that bookcase's close-up.
+export function libraryPoseFacing(normal: THREE.Vector3) {
+  return LIBRARY_VIEW_CENTER.clone().addScaledVector(normal, LIBRARY_VIEW_RADIUS)
+}
 // Bookcases stand against the walls, facing the center where the camera is. The room starts
 // at the lobby's size and grows until every shelf gets a spot.
 const MIN_HALF = 3
@@ -17,8 +29,14 @@ const WALL_OFFSET = BOOKCASE_DEPTH / 2 + 0.02
 
 type Wall = 'front' | 'right' | 'back' | 'left'
 
+// One bookcase in the room. A shelf with more books than one bookcase holds gets several,
+// side by side: `part` is this one's index among the shelf's `partCount` bookcases, and
+// `books` the ones it holds.
 export type Placement = {
   shelf: Shelf
+  part: number
+  partCount: number
+  books: Book[]
   position: [number, number, number]
   rotationY: number
   normal: THREE.Vector3 // direction the bookcase faces, toward the room
@@ -63,33 +81,73 @@ function wallTransform(wall: Wall, along: number, half: number) {
   }
 }
 
-function capacity(half: number) {
-  return wallSegments(half).reduce((sum, s) => sum + slotsAlong(s.from, s.to).length, 0)
+type Unit = { group: number; part: number }
+
+// Distributes the groups of bookcases (one group per shelf, `sizes[i]` bookcases each) over
+// the wall segments in order, keeping each group on a single segment when it fits there.
+// Returns the units assigned to each segment, or null if the room is too small.
+function assignToWalls(sizes: number[], half: number): Unit[][] | null {
+  const segments = wallSegments(half)
+  const capacities = segments.map((seg) => slotsAlong(seg.from, seg.to).length)
+  const used: Unit[][] = segments.map(() => [])
+  let s = 0
+
+  for (let group = 0; group < sizes.length; group++) {
+    const size = sizes[group]
+    // move on to the next segment if the whole group doesn't fit in what's left of this
+    // one — unless this segment is empty and the group is bigger than it anyway, in which
+    // case it starts here and spills over
+    while (
+      s < segments.length &&
+      capacities[s] - used[s].length < size &&
+      !(used[s].length === 0 && size > capacities[s])
+    ) {
+      s++
+    }
+    for (let part = 0; part < size; part++) {
+      while (s < segments.length && used[s].length >= capacities[s]) s++
+      if (s >= segments.length) return null
+      used[s].push({ group, part })
+    }
+  }
+  return used
 }
 
-// Where every shelf's bookcase stands in the library room, and the room's half-size.
-// Deterministic for a given shelves list, so the shelf close-up can rebuild the exact same
-// room around its bookcase.
-export function placeBookcases(shelves: Shelf[]) {
+// Where every bookcase stands in the library room, and the room's half-size. Deterministic
+// for given shelves and books, so the shelf close-up can rebuild the exact same room around
+// its bookcase.
+export function placeBookcases(shelves: Shelf[], booksByShelf: Record<string, Book[]>) {
+  const split = shelves.map((shelf) => splitIntoBookcases(booksByShelf[shelf.id] ?? []))
+  const sizes = split.map((bookcases) => bookcases.length)
+
   let half = MIN_HALF
-  while (capacity(half) < shelves.length) half += HALF_STEP
+  let assignment = assignToWalls(sizes, half)
+  while (!assignment) {
+    half += HALF_STEP
+    assignment = assignToWalls(sizes, half)
+  }
 
   const placements: Placement[] = []
-  let next = 0
-  for (const segment of wallSegments(half)) {
-    const remaining = shelves.length - next
-    if (remaining <= 0) break
+  wallSegments(half).forEach((segment, i) => {
+    const units = assignment[i]
+    if (units.length === 0) return
     // the front wall is what the viewer sees first: center a partial row there
-    const slots = slotsAlong(segment.from, segment.to, segment.wall === 'front' ? remaining : undefined)
-    for (const along of slots.slice(0, remaining)) {
-      const t = wallTransform(segment.wall, along, half)
+    const slots =
+      segment.wall === 'front'
+        ? slotsAlong(segment.from, segment.to, units.length)
+        : slotsAlong(segment.from, segment.to)
+    units.forEach(({ group, part }, j) => {
+      const t = wallTransform(segment.wall, slots[j], half)
       placements.push({
-        shelf: shelves[next++],
+        shelf: shelves[group],
+        part,
+        partCount: sizes[group],
+        books: split[group][part],
         position: t.position as [number, number, number],
         rotationY: t.rotationY,
         normal: t.normal,
       })
-    }
-  }
+    })
+  })
   return { half, placements }
 }
