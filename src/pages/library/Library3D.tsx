@@ -5,6 +5,7 @@ import { useShelves } from '../../hooks/useShelves'
 import { useBooksByShelf } from '../../hooks/useBooksByShelf'
 import { ShelfManager } from '../../components/ShelfManager'
 import { ViewModeToggle } from '../../components/ViewModeToggle'
+import { loadLibraryScene, loadLobbyScene, loadShelfScene, preloadScenes } from '../scenes'
 import type { BookcaseRef } from '../../components/three/LibraryScene'
 import type { Book, Shelf } from '../../types'
 
@@ -16,13 +17,7 @@ export type LibraryHandover = {
   returningFrom: BookcaseRef
 }
 
-// The shelf close-up the bookcases lead to — preloaded so the crossfade into it doesn't
-// wait on a network round trip.
-const loadShelfScene = () => import('../../components/three/ShelfScene')
-
-const LibraryScene = lazy(() =>
-  import('../../components/three/LibraryScene').then((m) => ({ default: m.LibraryScene })),
-)
+const LibraryScene = lazy(() => loadLibraryScene().then((m) => ({ default: m.LibraryScene })))
 
 const overlayButtonClass =
   'rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-gray-700 shadow ring-1 ring-gray-200 backdrop-blur'
@@ -38,8 +33,9 @@ export function Library3D() {
   const booksByShelf = useBooksByShelf(shelves, handover?.booksByShelf)
   const [managing, setManaging] = useState(false)
 
+  // the shelf close-ups (bookcases) and the lobby (door) are one click away
   useEffect(() => {
-    loadShelfScene()
+    preloadScenes(loadShelfScene, loadLobbyScene)
   }, [])
 
   return (
@@ -67,7 +63,7 @@ export function Library3D() {
               }),
             )
           }
-          onExit={() => fadeAndNavigate(() => navigate('/'))}
+          onExit={() => fadeAndNavigate(() => navigate('/'), { waitForScene: true })}
         />
       </Suspense>
 

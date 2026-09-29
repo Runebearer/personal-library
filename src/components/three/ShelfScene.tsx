@@ -2,6 +2,8 @@ import { useLayoutEffect, useMemo, useRef } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
+import { useTransition } from '../../context/TransitionContext'
+import { SceneReadySignal } from '../../three/SceneReadySignal'
 import { LibraryThemeProvider } from '../../three/ThemeContext'
 import { CLOSE_UP_FOV, closeUpDistance, closeUpPose } from '../../three/bookcaseFraming'
 import {
@@ -150,6 +152,8 @@ export function ShelfScene({
   onExited: (snapshot: string) => void
   onSelectBook: (book: Book) => void
 }) {
+  const { notifySceneReady } = useTransition()
+
   return (
     <div className="h-dvh w-full bg-gray-900">
       {/* preserveDrawingBuffer: the last frame is captured as a snapshot for the crossfade */}
@@ -158,6 +162,7 @@ export function ShelfScene({
         camera={{ fov: CLOSE_UP_FOV }}
         gl={{ preserveDrawingBuffer: true }}
       >
+        <SceneReadySignal onReady={notifySceneReady} />
         <LibraryThemeProvider>
           <ShelfContents
             shelves={shelves}

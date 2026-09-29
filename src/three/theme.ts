@@ -22,6 +22,9 @@ export interface LibraryTheme {
   fireplaceFireTexture?: string
   torchFlameTexture?: string
   candleTexture?: string
+  paintingFrameColor: string
+  // Picture hung above the lobby desk.
+  lobbyPaintingTexture?: string
   bookCoverColor: string
   bookPageColor: string
   bookTitleColor: string
@@ -52,6 +55,8 @@ export const oakTheme: LibraryTheme = {
   fireplaceFireTexture: '/textures/fireplace-fire-01.webp',
   torchFlameTexture: '/textures/torch-flame-01.webp',
   candleTexture: '/textures/candle-01.webp',
+  paintingFrameColor: '#3d2817',
+  lobbyPaintingTexture: '/textures/painting-entrance-01.webp',
   bookCoverColor: '#4169e1',
   bookPageColor: '#ede4d3',
   bookTitleColor: '#f3e3b0',

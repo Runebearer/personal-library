@@ -1,13 +1,12 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { signOut } from '../../firebase/auth'
 import { useTransition } from '../../context/TransitionContext'
 import { useFavoritesShelf, FAVORITES_SHELF_NAME } from '../../hooks/useFavoritesShelf'
 import { ViewModeToggle } from '../../components/ViewModeToggle'
+import { loadLibraryScene, loadLobbyScene, loadShelfScene, preloadScenes } from '../scenes'
 
-const LobbyScene = lazy(() =>
-  import('../../components/three/LobbyScene').then((m) => ({ default: m.LobbyScene })),
-)
+const LobbyScene = lazy(() => loadLobbyScene().then((m) => ({ default: m.LobbyScene })))
 
 // 3D home: the lobby. Same entries as HomeClassic — favorites (the book on the desk),
 // the library (left door) and logout (door behind).
@@ -15,6 +14,11 @@ export function Home3D() {
   const navigate = useNavigate()
   const { fadeAndNavigate } = useTransition()
   const { favoritesShelf, createFavoritesShelf } = useFavoritesShelf()
+
+  // the library (door) and the favorites shelf (book) are one click away
+  useEffect(() => {
+    preloadScenes(loadLibraryScene, loadShelfScene)
+  }, [])
 
   async function handleSelectBook() {
     let shelfId = favoritesShelf?.id ?? null
@@ -24,7 +28,7 @@ export function Home3D() {
       if (!shelfId) return
     }
     const target = shelfId
-    fadeAndNavigate(() => navigate(`/shelves/${target}`))
+    fadeAndNavigate(() => navigate(`/shelves/${target}`), { waitForScene: true })
   }
 
   return (
@@ -38,7 +42,7 @@ export function Home3D() {
         }
       >
         <LobbyScene
-          onEnterLibrary={() => fadeAndNavigate(() => navigate('/library'))}
+          onEnterLibrary={() => fadeAndNavigate(() => navigate('/library'), { waitForScene: true })}
           onLogout={() => signOut()}
           onSelectBook={handleSelectBook}
         />

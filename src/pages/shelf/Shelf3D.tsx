@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTransition } from '../../context/TransitionContext'
 import { ViewModeToggle } from '../../components/ViewModeToggle'
+import { loadLibraryScene, loadShelfScene, preloadScenes } from '../scenes'
 import { useShelves } from '../../hooks/useShelves'
 import { useBooksByShelf } from '../../hooks/useBooksByShelf'
 import type { ShelfPreview } from '../../hooks/useShelfBooks'
@@ -9,13 +10,7 @@ import { splitIntoBookcases } from '../../three/bookcaseLayout'
 import type { LibraryHandover } from '../library/Library3D'
 import type { Book } from '../../types'
 
-// The library the back button zooms out to — preloaded so the crossfade into it doesn't wait
-// on a network round trip.
-const loadLibraryScene = () => import('../../components/three/LibraryScene')
-
-const ShelfScene = lazy(() =>
-  import('../../components/three/ShelfScene').then((m) => ({ default: m.ShelfScene })),
-)
+const ShelfScene = lazy(() => loadShelfScene().then((m) => ({ default: m.ShelfScene })))
 
 const overlayButtonClass =
   'rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-gray-700 shadow ring-1 ring-gray-200 backdrop-blur'
@@ -38,8 +33,9 @@ export function Shelf3D({
   const { fadeAndNavigate, crossfadeAndNavigate } = useTransition()
   const [exiting, setExiting] = useState(false)
 
+  // the library the back button zooms out to
   useEffect(() => {
-    loadLibraryScene()
+    preloadScenes(loadLibraryScene)
   }, [])
   const { shelves, loaded } = useShelves(preview?.shelves)
   const booksByShelf = useBooksByShelf(shelves, preview?.booksByShelf)
@@ -63,7 +59,7 @@ export function Shelf3D({
     }
     const go = () => navigate('/library', { state: { library: handover } })
     if (snapshot) crossfadeAndNavigate(snapshot, go)
-    else fadeAndNavigate(go)
+    else fadeAndNavigate(go, { waitForScene: true })
   }
 
   function showBookcase(next: number) {

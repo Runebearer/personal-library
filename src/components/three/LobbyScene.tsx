@@ -1,6 +1,8 @@
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
+import { useTransition } from '../../context/TransitionContext'
+import { SceneReadySignal } from '../../three/SceneReadySignal'
 import { LibraryThemeProvider } from '../../three/ThemeContext'
 import { useLibraryTheme } from '../../three/ThemeContext'
 import { useCameraApproach } from '../../three/useCameraApproach'
@@ -11,9 +13,13 @@ import { Fireplace } from './Fireplace'
 import { Candle } from './Candle'
 import { Book } from './Book'
 import { WallTorch } from './WallTorch'
+import { Painting } from './Painting'
 
 const ROOM_SIZE = 6
 const ROOM_HEIGHT = 3
+// The lobby painting's image is 1116×2000 px.
+const PAINTING_ASPECT = 1116 / 2000
+const PAINTING_HEIGHT = 1.3
 
 function LobbyContents({
   onEnterLibrary,
@@ -39,6 +45,17 @@ function LobbyContents({
 
       {/* desk on the wall in front of the user */}
       <Desk position={[0, 0, -half + 0.25]} rotation={[0, 0, 0]} />
+
+      {/* painting hung on the wall above the desk: its bottom edge (y=1.4) clears the
+          candle's flame on the counter, its top (2.7 + molding) stays under the ceiling */}
+      {theme.lobbyPaintingTexture && (
+        <Painting
+          url={theme.lobbyPaintingTexture}
+          position={[0, 1.4 + PAINTING_HEIGHT / 2, -half]}
+          height={PAINTING_HEIGHT}
+          aspect={PAINTING_ASPECT}
+        />
+      )}
 
       {/* candle on the counter, slightly left of center, near the front edge facing the
           user — counter top is at y=0.885 (Desk's PANEL_HEIGHT + 0.06); counter spans
@@ -105,9 +122,12 @@ export function LobbyScene({
   onLogout: () => void
   onSelectBook: () => void
 }) {
+  const { notifySceneReady } = useTransition()
+
   return (
     <div className="h-dvh w-full bg-gray-900">
       <Canvas frameloop="demand" camera={{ position: [0, 1.6, 1.2], fov: 60 }}>
+        <SceneReadySignal onReady={notifySceneReady} />
         <LibraryThemeProvider>
           <LobbyContents
             onEnterLibrary={onEnterLibrary}

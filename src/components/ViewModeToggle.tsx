@@ -9,7 +9,8 @@ export function ViewModeToggle({ className }: { className?: string }) {
 
   function handleToggle() {
     const next = viewMode === '3d' ? 'classic' : '3d'
-    fadeAndNavigate(() => setViewMode(next))
+    // switching to 3D: stay dark until the scene is drawn, then fade in on it
+    fadeAndNavigate(() => setViewMode(next), { waitForScene: next === '3d' })
   }
 
   return (
