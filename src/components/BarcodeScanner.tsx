@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserMultiFormatReader } from '@zxing/browser'
 import type { IScannerControls } from '@zxing/browser'
+import { BarcodeFormat, DecodeHintType } from '@zxing/library'
+import { normalizeIsbn } from '../lib/openLibrary'
 
 export function BarcodeScanner({
   onDetected,
@@ -13,23 +15,34 @@ export function BarcodeScanner({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const reader = new BrowserMultiFormatReader()
+    const hints = new Map([[DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.EAN_13]]])
+    const reader = new BrowserMultiFormatReader(hints)
     let controls: IScannerControls | undefined
+    let active = true
 
     reader
-      .decodeFromVideoDevice(undefined, videoRef.current ?? undefined, (result) => {
-        if (result) {
-          onDetected(result.getText())
-        }
+      .decodeFromVideoDevice(undefined, videoRef.current ?? undefined, (result, _err, c) => {
+        if (!active || !result) return
+        const isbn = normalizeIsbn(result.getText())
+        if (!isbn || !/^97[89]/.test(isbn)) return
+        // The decoder keeps firing on every frame: report the first ISBN only
+        active = false
+        c.stop()
+        onDetected(isbn)
       })
       .then((c) => {
         controls = c
+        // Unmounted before the camera was ready (e.g. StrictMode double mount)
+        if (!active) c.stop()
       })
       .catch(() => {
-        setError("Impossible d'accéder à la caméra. Vérifiez les autorisations.")
+        if (active) setError("Impossible d'accéder à la caméra. Vérifiez les autorisations.")
       })
 
-    return () => controls?.stop()
+    return () => {
+      active = false
+      controls?.stop()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

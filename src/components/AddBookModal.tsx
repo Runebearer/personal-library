@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { BarcodeScanner } from './BarcodeScanner'
 import { BookDetailModal } from './BookDetailModal'
-import { fetchBookByIsbn } from '../lib/openLibrary'
+import { fetchBookByIsbn, normalizeIsbn } from '../lib/openLibrary'
 import type { BookMetadata } from '../types'
 
 type Step =
@@ -28,11 +28,13 @@ function ManualIsbnForm({
   onCancel: () => void
 }) {
   const [isbn, setIsbn] = useState('')
+  const [invalid, setInvalid] = useState(false)
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    const trimmed = isbn.trim()
-    if (trimmed) onSubmit(trimmed)
+    const normalized = normalizeIsbn(isbn)
+    setInvalid(!normalized)
+    if (normalized) onSubmit(normalized)
   }
 
   return (
@@ -54,6 +56,7 @@ function ManualIsbnForm({
             className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
           />
         </label>
+        {invalid && <p className="text-sm text-red-600">ISBN invalide (10 ou 13 chiffres).</p>}
         <button type="submit" className="rounded-lg bg-gray-900 py-2 text-white">
           Rechercher
         </button>
