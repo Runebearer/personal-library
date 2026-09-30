@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { BookSearch } from '../../components/BookSearch'
 import { ShelfManager } from '../../components/ShelfManager'
 import { ViewModeToggle } from '../../components/ViewModeToggle'
 
@@ -16,6 +17,9 @@ export function LibraryClassic() {
       </header>
 
       <div className="px-4">
+        <div className="mb-6">
+          <BookSearch />
+        </div>
         <ShelfManager />
       </div>
     </div>

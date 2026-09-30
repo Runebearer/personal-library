@@ -8,6 +8,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  type QueryDocumentSnapshot,
   serverTimestamp,
   Timestamp,
   updateDoc,
@@ -92,33 +93,42 @@ export async function deleteShelf(uid: string, shelfId: string) {
   await batch.commit()
 }
 
+function toBook(d: QueryDocumentSnapshot): Book {
+  const data = d.data()
+  return {
+    id: d.id,
+    isbn: data.isbn as string,
+    title: data.title as string,
+    subtitle: (data.subtitle as string | null) ?? null,
+    tome: (data.tome as string | null) ?? null,
+    seriesId: (data.seriesId as string | null) ?? null,
+    authors: (data.authors as string[]) ?? [],
+    coverUrl: (data.coverUrl as string | null) ?? null,
+    genre: (data.genre as string | null) ?? null,
+    synopsis: (data.synopsis as string | null) ?? null,
+    rating: (data.rating as number) ?? 0,
+    addedAt: (data.addedAt as Timestamp | null)?.toMillis() ?? 0,
+  }
+}
+
 export function subscribeToBooks(
   uid: string,
   shelfId: string,
   callback: (books: Book[]) => void,
 ) {
   const q = query(booksRef(uid, shelfId), orderBy('addedAt', 'desc'))
-  return onSnapshot(q, (snapshot) => {
-    callback(
-      snapshot.docs.map((d) => {
-        const data = d.data()
-        return {
-          id: d.id,
-          isbn: data.isbn as string,
-          title: data.title as string,
-          subtitle: (data.subtitle as string | null) ?? null,
-          tome: (data.tome as string | null) ?? null,
-          seriesId: (data.seriesId as string | null) ?? null,
-          authors: (data.authors as string[]) ?? [],
-          coverUrl: (data.coverUrl as string | null) ?? null,
-          genre: (data.genre as string | null) ?? null,
-          synopsis: (data.synopsis as string | null) ?? null,
-          rating: (data.rating as number) ?? 0,
-          addedAt: (data.addedAt as Timestamp | null)?.toMillis() ?? 0,
-        }
-      }),
-    )
-  })
+  return onSnapshot(q, (snapshot) => callback(snapshot.docs.map(toBook)))
+}
+
+// One-off read of every book of the given shelves, unfiltered (genre shelves included)
+export async function fetchBooksOfShelves(
+  uid: string,
+  shelfIds: string[],
+): Promise<{ shelfId: string; book: Book }[]> {
+  const snapshots = await Promise.all(shelfIds.map((id) => getDocs(booksRef(uid, id))))
+  return snapshots.flatMap((snapshot, i) =>
+    snapshot.docs.map((d) => ({ shelfId: shelfIds[i], book: toBook(d) })),
+  )
 }
 
 export function addBook(uid: string, shelfId: string, metadata: BookMetadata) {

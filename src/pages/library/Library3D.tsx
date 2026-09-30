@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useTransition } from '../../context/TransitionContext'
 import { useShelves } from '../../hooks/useShelves'
 import { useBooksByShelf } from '../../hooks/useBooksByShelf'
+import { BookSearch } from '../../components/BookSearch'
 import { ShelfManager } from '../../components/ShelfManager'
 import { ViewModeToggle } from '../../components/ViewModeToggle'
 import { loadLibraryScene, loadLobbyScene, loadShelfScene, preloadScenes } from '../scenes'
@@ -32,6 +33,7 @@ export function Library3D() {
   const { shelves, loaded } = useShelves(handover?.shelves)
   const booksByShelf = useBooksByShelf(shelves, handover?.booksByShelf)
   const [managing, setManaging] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
 
   // the shelf close-ups (bookcases) and the lobby (door) are one click away
   useEffect(() => {
@@ -75,11 +77,30 @@ export function Library3D() {
         </div>
       )}
 
-      <div className="fixed inset-x-0 bottom-6 z-10 flex justify-center">
+      <div className="fixed inset-x-0 bottom-6 z-10 flex justify-center gap-2">
+        <button type="button" onClick={() => setSearchOpen(true)} className={overlayButtonClass}>
+          Rechercher
+        </button>
         <button type="button" onClick={() => setManaging(true)} className={overlayButtonClass}>
           Gérer les étagères
         </button>
       </div>
+
+      {searchOpen && (
+        <div className="fixed inset-0 z-40 flex items-end bg-black/40 sm:items-center sm:justify-center">
+          <div className="flex w-full flex-col gap-2 rounded-t-2xl bg-gray-50 p-4 sm:max-w-md sm:rounded-2xl">
+            <p className="pb-2 text-center font-medium text-gray-900">Rechercher un livre</p>
+            <BookSearch />
+            <button
+              type="button"
+              onClick={() => setSearchOpen(false)}
+              className="rounded-lg py-2 text-gray-500"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
 
       {managing && (
         <div className="fixed inset-0 z-50 flex items-end bg-black/40 sm:items-center sm:justify-center">
