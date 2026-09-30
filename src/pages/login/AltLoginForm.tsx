@@ -3,7 +3,7 @@ import { useLoginForm } from './useLoginForm'
 import { GoogleIcon } from './GoogleIcon'
 
 const cardClass =
-  'w-full max-w-sm rounded-2xl border border-[#6b4226] bg-[#3d2817]/90 p-8 shadow-2xl shadow-black/60 backdrop-blur-sm'
+  'w-full max-w-sm rounded-2xl border border-[#6b4226] bg-[#3d2817]/20 p-8 shadow-2xl shadow-black/60 backdrop-blur-sm'
 const inputClass =
   'rounded-lg border border-[#6b4226] bg-[#2e1c10] px-4 py-3 text-base text-[#ede4d3] placeholder-[#ede4d3]/40 outline-none focus:border-[#ff7a33]'
 const primaryButtonClass =
