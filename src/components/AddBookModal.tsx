@@ -7,17 +7,15 @@ import type { BookMetadata } from '../types'
 
 type Step =
   | { kind: 'scanning' }
+  | { kind: 'typing' }
   | { kind: 'looking-up'; isbn: string }
   | { kind: 'confirm'; metadata: BookMetadata }
   | { kind: 'not-found'; isbn: string }
   | { kind: 'error'; message: string }
 
-function isDesktopDevice() {
-  return (
-    typeof window !== 'undefined' &&
-    window.matchMedia('(pointer: fine)').matches &&
-    navigator.maxTouchPoints === 0
-  )
+// getUserMedia is only exposed on secure origins (HTTPS or localhost)
+function canUseCamera() {
+  return typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
 }
 
 function ManualIsbnForm({
@@ -75,7 +73,9 @@ export function AddBookModal({
   onConfirm: (metadata: BookMetadata) => void
   onClose: () => void
 }) {
-  const [step, setStep] = useState<Step>({ kind: 'scanning' })
+  const [step, setStep] = useState<Step>(
+    canUseCamera() ? { kind: 'scanning' } : { kind: 'typing' },
+  )
 
   async function handleDetected(isbn: string) {
     setStep({ kind: 'looking-up', isbn })
@@ -110,11 +110,17 @@ export function AddBookModal({
   }
 
   if (step.kind === 'scanning') {
-    return isDesktopDevice() ? (
-      <ManualIsbnForm onSubmit={handleDetected} onCancel={onClose} />
-    ) : (
-      <BarcodeScanner onDetected={handleDetected} onCancel={onClose} />
+    return (
+      <BarcodeScanner
+        onDetected={handleDetected}
+        onManualEntry={() => setStep({ kind: 'typing' })}
+        onCancel={onClose}
+      />
     )
+  }
+
+  if (step.kind === 'typing') {
+    return <ManualIsbnForm onSubmit={handleDetected} onCancel={onClose} />
   }
 
   if (step.kind === 'confirm') {
