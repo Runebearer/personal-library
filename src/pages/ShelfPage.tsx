@@ -24,8 +24,8 @@ export function ShelfPage() {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null)
   const [movingBook, setMovingBook] = useState<Book | null>(null)
 
-  async function handleConfirmAdd(metadata: BookMetadata) {
-    await add(metadata)
+  async function handleConfirmAdd(metadata: BookMetadata, targetShelfId: string) {
+    await add(metadata, targetShelfId)
     setShowAddModal(false)
   }
 
@@ -65,7 +65,11 @@ export function ShelfPage() {
       </button>
 
       {showAddModal && (
-        <AddBookModal onConfirm={handleConfirmAdd} onClose={() => setShowAddModal(false)} />
+        <AddBookModal
+          defaultShelfId={shelfId ?? ''}
+          onConfirm={handleConfirmAdd}
+          onClose={() => setShowAddModal(false)}
+        />
       )}
 
       {selectedBook && (

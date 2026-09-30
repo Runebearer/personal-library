@@ -72,9 +72,10 @@ export function useShelfBooks(shelfId: string | undefined, preview?: ShelfPrevie
 
   const groups = useMemo(() => groupBooks(books, shelf), [books, shelf])
 
-  async function add(metadata: BookMetadata) {
-    if (!user || !shelfId) return
-    await addBook(user.uid, shelfId, metadata)
+  // Adds to this shelf unless another one is given
+  async function add(metadata: BookMetadata, targetShelfId = shelfId) {
+    if (!user || !targetShelfId) return
+    await addBook(user.uid, targetShelfId, metadata)
   }
 
   async function update(bookId: string, metadata: BookMetadata) {

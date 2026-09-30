@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { BarcodeScanner } from './BarcodeScanner'
 import { BookDetailModal } from './BookDetailModal'
+import { ChooseShelfModal } from './ChooseShelfModal'
 import { fetchBookByIsbn, normalizeIsbn } from '../lib/openLibrary'
 import type { BookMetadata } from '../types'
 
@@ -10,6 +11,7 @@ type Step =
   | { kind: 'typing' }
   | { kind: 'looking-up'; isbn: string }
   | { kind: 'confirm'; metadata: BookMetadata }
+  | { kind: 'choose-shelf'; metadata: BookMetadata }
   | { kind: 'not-found'; isbn: string }
   | { kind: 'error'; message: string }
 
@@ -67,10 +69,12 @@ function ManualIsbnForm({
 }
 
 export function AddBookModal({
+  defaultShelfId,
   onConfirm,
   onClose,
 }: {
-  onConfirm: (metadata: BookMetadata) => void
+  defaultShelfId: string
+  onConfirm: (metadata: BookMetadata, shelfId: string) => Promise<void>
   onClose: () => void
 }) {
   const [step, setStep] = useState<Step>(
@@ -128,8 +132,19 @@ export function AddBookModal({
       <BookDetailModal
         metadata={step.metadata}
         confirmLabel="Ajouter à l'étagère"
-        onConfirm={onConfirm}
+        onConfirm={(metadata) => setStep({ kind: 'choose-shelf', metadata })}
         onClose={onClose}
+      />
+    )
+  }
+
+  if (step.kind === 'choose-shelf') {
+    return (
+      <ChooseShelfModal
+        metadata={step.metadata}
+        defaultShelfId={defaultShelfId}
+        onConfirm={(shelfId) => onConfirm(step.metadata, shelfId)}
+        onBack={() => setStep({ kind: 'confirm', metadata: step.metadata })}
       />
     )
   }
