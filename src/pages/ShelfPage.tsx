@@ -51,7 +51,6 @@ export function ShelfPage() {
           groups={groups}
           isEmpty={books.length === 0}
           onSelectBook={setSelectedBook}
-          onDeleteBook={(book) => remove(book.id)}
         />
       )}
 
@@ -80,6 +79,10 @@ export function ShelfPage() {
           onClose={() => setSelectedBook(null)}
           onMoveToShelf={() => {
             setMovingBook(selectedBook)
+            setSelectedBook(null)
+          }}
+          onDelete={async () => {
+            await remove(selectedBook.id)
             setSelectedBook(null)
           }}
         />

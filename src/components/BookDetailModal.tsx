@@ -14,13 +14,17 @@ export function BookDetailModal({
   onConfirm,
   onClose,
   onMoveToShelf,
+  onDelete,
 }: {
   metadata: BookMetadata
   confirmLabel: string
   onConfirm: (metadata: BookMetadata) => void
   onClose: () => void
   onMoveToShelf?: () => void
+  onDelete?: () => void | Promise<void>
 }) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [title, setTitle] = useState(metadata.title)
   const [showSubtitle, setShowSubtitle] = useState(Boolean(metadata.subtitle))
   const [subtitle, setSubtitle] = useState(metadata.subtitle ?? '')
@@ -345,9 +349,55 @@ export function BookDetailModal({
             Changer d'étagère
           </button>
         )}
-        <button type="button" onClick={onClose} className="rounded-lg py-2 text-gray-500">
-          Annuler
-        </button>
+        {confirmingDelete && onDelete ? (
+          <div className="flex flex-col gap-2 rounded-lg bg-red-50 p-3">
+            <p className="text-center text-sm text-red-800">
+              Supprimer « {metadata.title} » ? Cette action est définitive.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                disabled={deleting}
+                className="rounded-lg bg-white py-2 text-gray-600 ring-1 ring-gray-200"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setDeleting(true)
+                  try {
+                    await onDelete()
+                  } catch {
+                    setError('La suppression a échoué. Réessaie plus tard.')
+                    setConfirmingDelete(false)
+                    setDeleting(false)
+                  }
+                }}
+                disabled={deleting}
+                className="rounded-lg bg-red-600 py-2 font-medium text-white disabled:opacity-60"
+              >
+                {deleting ? 'Suppression…' : 'Confirmer'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className={onDelete ? 'grid grid-cols-2 gap-2' : 'flex flex-col'}>
+            <button type="button" onClick={onClose} className="rounded-lg py-2 text-gray-500">
+              Annuler
+            </button>
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                className="rounded-lg py-2 text-red-600 ring-1 ring-red-200"
+              >
+                Supprimer
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

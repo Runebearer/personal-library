@@ -10,13 +10,11 @@ export function ShelfClassic({
   groups,
   isEmpty,
   onSelectBook,
-  onDeleteBook,
 }: {
   shelf: Shelf | null
   groups: BookGroup[]
   isEmpty: boolean
   onSelectBook: (book: Book) => void
-  onDeleteBook: (book: Book) => void
 }) {
   return (
     <div className="min-h-dvh bg-gray-50 pb-24">
@@ -47,7 +45,6 @@ export function ShelfClassic({
                     key={book.id}
                     book={book}
                     onClick={() => onSelectBook(book)}
-                    onDelete={() => onDeleteBook(book)}
                   />
                 ))}
               </div>
