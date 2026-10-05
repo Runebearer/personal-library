@@ -12,6 +12,8 @@ export interface Shelf {
 export interface Series {
   id: string
   name: string
+  // spine color of its volumes (#rrggbb); null = picked from the theme
+  color: string | null
   createdAt: number
 }
 

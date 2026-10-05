@@ -194,6 +194,7 @@ export function subscribeToSeries(uid: string, callback: (series: Series[]) => v
         return {
           id: d.id,
           name: data.name as string,
+          color: (data.color as string | null) ?? null,
           createdAt: (data.createdAt as Timestamp | null)?.toMillis() ?? 0,
         }
       }),
@@ -202,6 +203,10 @@ export function subscribeToSeries(uid: string, callback: (series: Series[]) => v
 }
 
 export async function createSeries(uid: string, name: string): Promise<string> {
-  const created = await addDoc(seriesRef(uid), { name, createdAt: serverTimestamp() })
+  const created = await addDoc(seriesRef(uid), { name, color: null, createdAt: serverTimestamp() })
   return created.id
+}
+
+export function updateSeriesColor(uid: string, seriesId: string, color: string | null) {
+  return updateDoc(doc(seriesRef(uid), seriesId), { color })
 }

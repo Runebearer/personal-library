@@ -8,13 +8,22 @@ import {
   subscribeToShelf,
   updateBook,
 } from '../firebase/firestore'
+import { groupBySeries } from '../lib/series'
 import type { Book, BookMetadata, Shelf } from '../types'
 
 export type BookGroup = { heading: string | null; books: Book[] }
 
 // Applies the shelf's sorting mode: custom keeps insertion order, title sorts, genre
-// filters, author groups by first author.
+// filters, author groups by first author. Whatever the mode, the volumes of a series then
+// come together, in tome order, where its first book stands (same rule as the 3D bookcases).
 export function groupBooks(books: Book[], shelf: Shelf | null): BookGroup[] {
+  return sortBooks(books, shelf).map((group) => ({
+    ...group,
+    books: groupBySeries(group.books),
+  }))
+}
+
+function sortBooks(books: Book[], shelf: Shelf | null): BookGroup[] {
   if (!shelf || shelf.mode === 'custom') {
     return [{ heading: null, books }]
   }

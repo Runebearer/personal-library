@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { RatingStars } from './RatingStars'
 import { GENRE_LIST } from '../lib/genre'
 import { useSeries } from '../hooks/useSeries'
+import { ColorWheel } from './ColorWheel'
 import type { BookMetadata } from '../types'
 
 // Value of the series <select> meaning "create a new series with the typed name".
@@ -25,17 +26,24 @@ export function BookDetailModal({
   const [subtitle, setSubtitle] = useState(metadata.subtitle ?? '')
   const [showTome, setShowTome] = useState(Boolean(metadata.tome))
   const [tome, setTome] = useState(metadata.tome ?? '')
-  const { series, findOrCreate } = useSeries()
+  const { series, findOrCreate, setColor } = useSeries()
   const [showSeries, setShowSeries] = useState(Boolean(metadata.seriesId))
   // '' = no series, NEW_SERIES = create one named newSeriesName, otherwise an existing id
   const [seriesChoice, setSeriesChoice] = useState(metadata.seriesId ?? '')
   const [newSeriesName, setNewSeriesName] = useState('')
+  // The series' spine color: undefined = untouched (the series' saved one applies), null =
+  // back to the theme's colors, otherwise the picked #rrggbb.
+  const [colorEdit, setColorEdit] = useState<string | null | undefined>(undefined)
+  const [showWheel, setShowWheel] = useState(false)
+  const savedColor = series.find((s) => s.id === seriesChoice)?.color ?? null
+  const seriesColor = colorEdit !== undefined ? colorEdit : savedColor
   const [saving, setSaving] = useState(false)
   const [authors, setAuthors] = useState(metadata.authors.length > 0 ? metadata.authors : [''])
   const [genre, setGenre] = useState(metadata.genre ?? '')
   const [synopsis, setSynopsis] = useState(metadata.synopsis ?? '')
   const [rating, setRating] = useState(metadata.rating)
   const [error, setError] = useState<string | null>(null)
+  const pressedBackdrop = useRef(false)
 
   function handleAuthorChange(index: number, value: string) {
     setAuthors((prev) => prev.map((a, i) => (i === index ? value : a)))
@@ -51,6 +59,8 @@ export function BookDetailModal({
 
   function handleSeriesChange(value: string) {
     setSeriesChoice(value)
+    setColorEdit(undefined)
+    setShowWheel(false)
     // a book in a series usually has a volume number: offer the field right away
     if (value && value !== NEW_SERIES) setShowTome(true)
   }
@@ -84,6 +94,13 @@ export function BookDetailModal({
       setSaving(false)
       return
     }
+    try {
+      if (seriesId && colorEdit !== undefined) await setColor(seriesId, colorEdit)
+    } catch {
+      setError("Impossible d'enregistrer la couleur de la série. Réessaie plus tard.")
+      setSaving(false)
+      return
+    }
     setSaving(false)
 
     onConfirm({
@@ -100,7 +117,15 @@ export function BookDetailModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40 sm:items-center sm:justify-center">
+    <div
+      className="fixed inset-0 z-50 flex items-end bg-black/40 sm:items-center sm:justify-center"
+      // a click on the dimmed backdrop closes the sheet; the press must also start there, so
+      // dragging a text selection out of a field doesn't dismiss it
+      onPointerDown={(e) => (pressedBackdrop.current = e.target === e.currentTarget)}
+      onClick={(e) => {
+        if (pressedBackdrop.current && e.target === e.currentTarget) onClose()
+      }}
+    >
       <div className="flex max-h-[90vh] w-full flex-col gap-3 overflow-y-auto rounded-t-2xl bg-white p-4 sm:max-w-sm sm:rounded-2xl">
         <div className="flex gap-3">
           <div className="h-28 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
@@ -194,6 +219,37 @@ export function BookDetailModal({
                 placeholder="Nom de la nouvelle série"
                 className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
               />
+            )}
+            {seriesChoice && (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <button
+                    type="button"
+                    onClick={() => setShowWheel((open) => !open)}
+                    aria-label="Choisir la couleur de la série"
+                    className="h-8 w-8 rounded-full ring-1 ring-gray-300"
+                    style={{
+                      background:
+                        seriesColor ??
+                        'conic-gradient(from 90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)',
+                    }}
+                  />
+                  <span>{seriesColor ? `Couleur de la série ${seriesColor}` : 'Couleur de la série'}</span>
+                  {seriesColor && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setColorEdit(null)
+                        setShowWheel(false)
+                      }}
+                      className="ml-auto text-gray-500"
+                    >
+                      Par défaut
+                    </button>
+                  )}
+                </div>
+                {showWheel && <ColorWheel value={seriesColor} onChange={setColorEdit} />}
+              </div>
             )}
           </div>
         ) : (

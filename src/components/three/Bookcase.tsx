@@ -4,6 +4,9 @@ import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { useLibraryTheme } from '../../three/ThemeContext'
 import { isDragRelease } from '../../three/pointer'
+import { useSeriesById } from '../../three/SeriesContext'
+import { isDark } from '../../lib/color'
+import { useTextTexture } from '../../three/textTexture'
 import { RectGlow, type GlowRect } from './RectGlow'
 import { SceneLabel } from './SceneLabel'
 import {
@@ -16,6 +19,7 @@ import {
   ROW_PITCH,
   ROWS,
   layoutBooks,
+  type BookInstance,
 } from '../../three/bookcaseLayout'
 import type { Book } from '../../types'
 
@@ -31,6 +35,48 @@ const GLOW_RECTS: GlowRect[] = [
   { center: [0, BOOKCASE_HEIGHT / 2], size: [BOOKCASE_WIDTH, BOOKCASE_HEIGHT] },
 ]
 
+// The series name printed along the spines of its volumes, reading bottom to top. All the
+// volumes of a series share their size (see layoutBooks), so one text texture serves them
+// all. Unlit like Book's title so the lettering stays readable in the dim scenes.
+const SPINE_CANVAS_WIDTH = 512
+const SPINE_TEXT_INSET = 0.92
+const SPINE_OFFSET = 0.001
+
+function SeriesSpines({ name, instances }: { name: string; instances: BookInstance[] }) {
+  const theme = useLibraryTheme()
+  const { invalidate } = useThree()
+  const [thickness, height] = instances[0].size
+  const length = height * SPINE_TEXT_INSET
+  const width = thickness * SPINE_TEXT_INSET
+  const texture = useTextTexture(name, {
+    width: SPINE_CANVAS_WIDTH,
+    height: Math.round((SPINE_CANVAS_WIDTH * width) / length),
+    // light lettering on dark spines, dark on light ones (a series can pick any color)
+    color: isDark(instances[0].color) ? theme.bookTitleColor : '#2a1d0a',
+    fontSize: 40,
+    maxLines: 1,
+  })
+
+  useEffect(() => invalidate(), [texture, invalidate])
+  if (!texture) return null
+
+  return (
+    <>
+      {instances.map((b) => (
+        <mesh
+          key={b.book.id}
+          position={[b.position[0], b.position[1], b.position[2] + b.size[2] / 2 + SPINE_OFFSET]}
+          rotation={[0, 0, Math.PI / 2]}
+          raycast={() => null}
+        >
+          <planeGeometry args={[length, width]} />
+          <meshBasicMaterial map={texture} transparent />
+        </mesh>
+      ))}
+    </>
+  )
+}
+
 // All the books of a bookcase, as one instanced mesh. With onSelectBook, each book is its
 // own click target: hovering one shows the Door-style halo around its spine and its title.
 function Books({ books, onSelectBook }: { books: Book[]; onSelectBook?: (book: Book) => void }) {
@@ -38,11 +84,24 @@ function Books({ books, onSelectBook }: { books: Book[]; onSelectBook?: (book: B
   const { invalidate } = useThree()
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
-  const instances = useMemo(
-    () => layoutBooks(books, theme.bookSpineColors),
-    [books, theme.bookSpineColors],
-  )
+  const seriesById = useSeriesById()
+  const instances = useMemo(() => {
+    const seriesColors = Object.fromEntries(Object.values(seriesById).map((s) => [s.id, s.color]))
+    return layoutBooks(books, theme.bookSpineColors, seriesColors)
+  }, [books, theme.bookSpineColors, seriesById])
   const hovered = hoveredIndex !== null ? instances[hoveredIndex] : undefined
+
+  const spinesBySeries = useMemo(() => {
+    const bySeries = new Map<string, BookInstance[]>()
+    for (const instance of instances) {
+      const id = instance.book.seriesId
+      if (!id || !seriesById[id]) continue
+      const list = bySeries.get(id)
+      if (list) list.push(instance)
+      else bySeries.set(id, [instance])
+    }
+    return [...bySeries.entries()]
+  }, [instances, seriesById])
 
   useLayoutEffect(() => {
     const mesh = meshRef.current
@@ -97,6 +156,10 @@ function Books({ books, onSelectBook }: { books: Book[]; onSelectBook?: (book: B
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial />
       </instancedMesh>
+
+      {spinesBySeries.map(([id, spines]) => (
+        <SeriesSpines key={id} name={seriesById[id].name} instances={spines} />
+      ))}
 
       {hovered && (
         <>

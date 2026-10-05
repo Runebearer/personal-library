@@ -5,6 +5,8 @@ import * as THREE from 'three'
 import { useTransition } from '../../context/TransitionContext'
 import { SceneReadySignal } from '../../three/SceneReadySignal'
 import { LibraryThemeProvider } from '../../three/ThemeContext'
+import { SeriesProvider } from '../../three/SeriesContext'
+import { useSeries } from '../../hooks/useSeries'
 import { CLOSE_UP_FOV, closeUpDistance, closeUpPose } from '../../three/bookcaseFraming'
 import {
   LIBRARY_FOV,
@@ -153,6 +155,7 @@ export function ShelfScene({
   onSelectBook: (book: Book) => void
 }) {
   const { notifySceneReady } = useTransition()
+  const { series } = useSeries()
 
   return (
     <div className="h-dvh w-full bg-gray-900">
@@ -164,15 +167,17 @@ export function ShelfScene({
       >
         <SceneReadySignal onReady={notifySceneReady} />
         <LibraryThemeProvider>
-          <ShelfContents
-            shelves={shelves}
-            booksByShelf={booksByShelf}
-            shelfId={shelfId}
-            part={part}
-            exiting={exiting}
-            onExited={onExited}
-            onSelectBook={onSelectBook}
-          />
+          <SeriesProvider series={series}>
+            <ShelfContents
+              shelves={shelves}
+              booksByShelf={booksByShelf}
+              shelfId={shelfId}
+              part={part}
+              exiting={exiting}
+              onExited={onExited}
+              onSelectBook={onSelectBook}
+            />
+          </SeriesProvider>
         </LibraryThemeProvider>
       </Canvas>
     </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { createSeries, subscribeToSeries } from '../firebase/firestore'
+import { createSeries, subscribeToSeries, updateSeriesColor } from '../firebase/firestore'
 import type { Series } from '../types'
 
 // The user's series (sorted by name) and a way to add one. Creating a series whose name
@@ -23,5 +23,10 @@ export function useSeries() {
     return createSeries(user.uid, trimmed)
   }
 
-  return { series, findOrCreate }
+  async function setColor(seriesId: string, color: string | null) {
+    if (!user) return
+    await updateSeriesColor(user.uid, seriesId, color)
+  }
+
+  return { series, findOrCreate, setColor }
 }

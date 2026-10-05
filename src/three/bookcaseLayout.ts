@@ -1,4 +1,5 @@
 import type { Book } from '../types'
+import { groupBySeries } from '../lib/series'
 
 // Bookcase dimensions and how books are shelved in it — plain geometry, no three.js, so
 // pages can know how many bookcases a shelf needs without loading the 3D bundle.
@@ -33,14 +34,20 @@ export type BookInstance = {
 
 // Lays the books out left to right, row by row from the top, spines facing +z. Books
 // that don't fit in the ROWS rows are left off.
-export function layoutBooks(books: Book[], palette: string[]): BookInstance[] {
+// seriesColors: a series' own spine color (by series id), which wins over the palette.
+export function layoutBooks(
+  books: Book[],
+  palette: string[],
+  seriesColors: Record<string, string | null> = {},
+): BookInstance[] {
   const instances: BookInstance[] = []
   let row = 0
   let x = -INNER_WIDTH / 2
 
-  for (const book of books) {
+  for (const book of groupBySeries(books)) {
     if (instances.length >= MAX_BOOKS) break
-    const h = hash(book.id)
+    // a series shares one look (size and color), so its volumes match on the shelf
+    const h = hash(book.seriesId ?? book.id)
     const thickness = 0.03 + ((h >>> 3) % 26) / 1000 // 0.030–0.055
     const height = 0.22 + ((h >>> 8) % 9) / 100 // 0.22–0.30
     const depth = 0.16 + ((h >>> 13) % 5) / 100 // 0.16–0.20
@@ -57,7 +64,7 @@ export function layoutBooks(books: Book[], palette: string[]): BookInstance[] {
       book,
       position: [x + thickness / 2, floorY + height / 2, BOOKCASE_DEPTH / 2 - depth / 2 - 0.02],
       size: [thickness, height, depth],
-      color: palette[h % palette.length],
+      color: (book.seriesId && seriesColors[book.seriesId]) || palette[h % palette.length],
     })
     x += thickness + BOOK_GAP
   }
@@ -70,7 +77,7 @@ export function layoutBooks(books: Book[], palette: string[]): BookInstance[] {
 // least one (possibly empty) bookcase.
 export function splitIntoBookcases(books: Book[]): Book[][] {
   const bookcases: Book[][] = []
-  let rest = books
+  let rest = groupBySeries(books)
   do {
     // palette doesn't matter here, only how many books fit
     const fit = Math.max(1, layoutBooks(rest, ['']).length)
