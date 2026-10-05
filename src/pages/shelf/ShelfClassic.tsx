@@ -23,7 +23,7 @@ export function ShelfClassic({
           <Link to="/library" className="text-gray-500">
             ‹
           </Link>
-          <h1 className="text-xl font-semibold text-gray-900">{shelf?.name ?? 'Livres'}</h1>
+          <h1 className="text-xl font-semibold text-gray-900">{shelf?.name ?? ''}</h1>
         </div>
         <ViewModeToggle />
       </header>
