@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 // 'login': same look as the login card (AltLoginForm). 'classic': the light cards of HomeClassic.
@@ -33,6 +33,9 @@ const SLIDES = [
   "Cette Bibliothèque est un peu spéciale. Bien sûr tu peux y naviguer de façon classique grâce au bouton en haut à droite. Tu peux aussi y naviguer en 3D et t'y déplacer. Elle s'agrandira au fur et à mesure du temps qui passe !",
 ]
 
+// horizontal drag (px) needed to change slide
+const SWIPE_THRESHOLD = 40
+
 // Bell at the bottom-right; the welcome message is closed by default and opens on click.
 export function WelcomeBell({
   className = '',
@@ -44,13 +47,30 @@ export function WelcomeBell({
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const [slide, setSlide] = useState(0)
+  const swipeStartX = useRef<number | null>(null)
   const name = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0]
   const s = STYLES[variant]
 
   return (
     <div className={`flex flex-col items-end gap-3 ${className}`}>
       {open && (
-        <div className={s.card} role="status">
+        <div
+          className={`${s.card} touch-pan-y select-none`}
+          role="status"
+          onPointerDown={(e) => {
+            swipeStartX.current = e.clientX
+          }}
+          onPointerUp={(e) => {
+            if (swipeStartX.current === null) return
+            const dx = e.clientX - swipeStartX.current
+            swipeStartX.current = null
+            if (Math.abs(dx) < SWIPE_THRESHOLD) return
+            setSlide((i) => Math.min(SLIDES.length - 1, Math.max(0, i + (dx < 0 ? 1 : -1))))
+          }}
+          onPointerCancel={() => {
+            swipeStartX.current = null
+          }}
+        >
           <h2 className={s.title}>Bienvenue{name ? `, ${name}` : ''}</h2>
           <div className={`mx-auto mt-3 h-px w-16 ${s.rule}`} />
           <p className={`mt-4 min-h-40 text-center text-sm leading-relaxed ${s.body}`}>
