@@ -4,6 +4,7 @@ import { signOut } from '../../firebase/auth'
 import { useTransition } from '../../context/TransitionContext'
 import { useFavoritesShelf, FAVORITES_SHELF_NAME } from '../../hooks/useFavoritesShelf'
 import { ViewModeToggle } from '../../components/ViewModeToggle'
+import { WelcomeBell } from '../../components/WelcomeBell'
 import { loadLibraryScene, loadLobbyScene, loadShelfScene, preloadScenes } from '../scenes'
 
 const LobbyScene = lazy(() => loadLobbyScene().then((m) => ({ default: m.LobbyScene })))
@@ -47,6 +48,7 @@ export function Home3D() {
           onSelectBook={handleSelectBook}
         />
       </Suspense>
+      <WelcomeBell className="fixed bottom-4 right-4 z-10" />
     </div>
   )
 }

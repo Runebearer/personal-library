@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { signOut } from '../../firebase/auth'
 import { useFavoritesShelf, FAVORITES_SHELF_NAME } from '../../hooks/useFavoritesShelf'
 import { ViewModeToggle } from '../../components/ViewModeToggle'
+import { WelcomeBell } from '../../components/WelcomeBell'
 
 const cardClass =
   'flex items-center justify-between rounded-xl bg-white px-4 py-4 shadow-sm ring-1 ring-gray-200'
@@ -54,6 +55,8 @@ export function HomeClassic() {
           <span className="font-medium text-gray-500">Déconnexion</span>
         </button>
       </div>
+
+      <WelcomeBell variant="classic"className="fixed bottom-4 right-4 z-10" />
     </div>
   )
 }
