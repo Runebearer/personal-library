@@ -207,6 +207,10 @@ export async function createSeries(uid: string, name: string): Promise<string> {
   return created.id
 }
 
+export function renameSeries(uid: string, seriesId: string, name: string) {
+  return updateDoc(doc(seriesRef(uid), seriesId), { name })
+}
+
 export function updateSeriesColor(uid: string, seriesId: string, color: string | null) {
   return updateDoc(doc(seriesRef(uid), seriesId), { color })
 }
