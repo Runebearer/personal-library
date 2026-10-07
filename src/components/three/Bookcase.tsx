@@ -42,18 +42,32 @@ const SPINE_CANVAS_WIDTH = 512
 const SPINE_TEXT_INSET = 0.92
 const SPINE_OFFSET = 0.001
 
+// The tome number sits at the top end of the spine, the series name takes the rest.
+const TOME_SHARE = 0.22
+const NAME_SHARE_WITH_TOME = 0.74
+const TOME_CANVAS_WIDTH = 128
+
+// Tome is free text ("3", "Tome 3"): print just its number when there is one.
+function tomeLabel(tome: string | null) {
+  return tome?.match(/\d+(?:[.,]\d+)?/)?.[0] ?? tome?.trim() ?? undefined
+}
+
 function SeriesSpines({ name, instances }: { name: string; instances: BookInstance[] }) {
   const theme = useLibraryTheme()
   const { invalidate } = useThree()
   const [thickness, height] = instances[0].size
   const length = height * SPINE_TEXT_INSET
   const width = thickness * SPINE_TEXT_INSET
+  const hasTomes = instances.some((b) => tomeLabel(b.book.tome))
+  const nameLength = hasTomes ? length * NAME_SHARE_WITH_TOME : length
+  const tomeLength = length * TOME_SHARE
+  // light lettering on dark spines, dark on light ones (a series can pick any color)
+  const color = isDark(instances[0].color) ? theme.bookTitleColor : '#2a1d0a'
   const texture = useTextTexture(name, {
     width: SPINE_CANVAS_WIDTH,
-    height: Math.round((SPINE_CANVAS_WIDTH * width) / length),
-    // light lettering on dark spines, dark on light ones (a series can pick any color)
-    color: isDark(instances[0].color) ? theme.bookTitleColor : '#2a1d0a',
-    fontSize: 40,
+    height: Math.round((SPINE_CANVAS_WIDTH * width) / nameLength),
+    color,
+    fontSize: 72,
     maxLines: 1,
   })
 
@@ -62,18 +76,65 @@ function SeriesSpines({ name, instances }: { name: string; instances: BookInstan
 
   return (
     <>
-      {instances.map((b) => (
-        <mesh
-          key={b.book.id}
-          position={[b.position[0], b.position[1], b.position[2] + b.size[2] / 2 + SPINE_OFFSET]}
-          rotation={[0, 0, Math.PI / 2]}
-          raycast={() => null}
-        >
-          <planeGeometry args={[length, width]} />
-          <meshBasicMaterial map={texture} transparent />
-        </mesh>
-      ))}
+      {instances.map((b) => {
+        const z = b.position[2] + b.size[2] / 2 + SPINE_OFFSET
+        const label = tomeLabel(b.book.tome)
+        return (
+          <group key={b.book.id}>
+            <mesh
+              position={[b.position[0], b.position[1] + (hasTomes ? -(length - nameLength) / 2 : 0), z]}
+              rotation={[0, 0, Math.PI / 2]}
+              raycast={() => null}
+            >
+              <planeGeometry args={[nameLength, width]} />
+              <meshBasicMaterial map={texture} transparent />
+            </mesh>
+            {label && (
+              <TomeNumber
+                label={label}
+                position={[b.position[0], b.position[1] + (length - tomeLength) / 2, z]}
+                length={tomeLength}
+                width={width}
+                color={color}
+              />
+            )}
+          </group>
+        )
+      })}
     </>
+  )
+}
+
+function TomeNumber({
+  label,
+  position,
+  length,
+  width,
+  color,
+}: {
+  label: string
+  position: [number, number, number]
+  length: number
+  width: number
+  color: string
+}) {
+  const { invalidate } = useThree()
+  const texture = useTextTexture(label, {
+    width: TOME_CANVAS_WIDTH,
+    height: Math.round((TOME_CANVAS_WIDTH * width) / length),
+    color,
+    fontSize: 110,
+    maxLines: 1,
+  })
+
+  useEffect(() => invalidate(), [texture, invalidate])
+  if (!texture) return null
+
+  return (
+    <mesh position={position} rotation={[0, 0, Math.PI / 2]} raycast={() => null}>
+      <planeGeometry args={[length, width]} />
+      <meshBasicMaterial map={texture} transparent />
+    </mesh>
   )
 }
 
@@ -92,15 +153,23 @@ function Books({ books, onSelectBook }: { books: Book[]; onSelectBook?: (book: B
   const hovered = hoveredIndex !== null ? instances[hoveredIndex] : undefined
 
   const spinesBySeries = useMemo(() => {
-    const bySeries = new Map<string, BookInstance[]>()
+    // a book outside any series prints its own title, alone on its spine
+    const spines = new Map<string, { name: string; instances: BookInstance[] }>()
     for (const instance of instances) {
       const id = instance.book.seriesId
-      if (!id || !seriesById[id]) continue
-      const list = bySeries.get(id)
-      if (list) list.push(instance)
-      else bySeries.set(id, [instance])
+      if (!id) {
+        spines.set(`book:${instance.book.id}`, {
+          name: instance.book.title,
+          instances: [instance],
+        })
+        continue
+      }
+      if (!seriesById[id]) continue
+      const entry = spines.get(id)
+      if (entry) entry.instances.push(instance)
+      else spines.set(id, { name: seriesById[id].name, instances: [instance] })
     }
-    return [...bySeries.entries()]
+    return [...spines.entries()]
   }, [instances, seriesById])
 
   useLayoutEffect(() => {
@@ -157,13 +226,16 @@ function Books({ books, onSelectBook }: { books: Book[]; onSelectBook?: (book: B
         <meshStandardMaterial />
       </instancedMesh>
 
-      {spinesBySeries.map(([id, spines]) => (
-        <SeriesSpines key={id} name={seriesById[id].name} instances={spines} />
+      {spinesBySeries.map(([key, { name, instances: spines }]) => (
+        <SeriesSpines key={key} name={name} instances={spines} />
       ))}
 
       {hovered && (
         <>
           <RectGlow
+            // remount per book: the plane's size and shader uniforms are fixed when it's built,
+            // so reusing one instance kept the first hovered book's halo for every other book
+            key={hovered.book.id}
             rects={[
               {
                 center: [hovered.position[0], hovered.position[1]],

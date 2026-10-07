@@ -11,6 +11,11 @@ export const ROWS = 5
 export const ROW_PITCH = (BOOKCASE_HEIGHT - PANEL) / ROWS
 export const INNER_WIDTH = BOOKCASE_WIDTH - PANEL * 2
 const BOOK_GAP = 0.002
+// Enlarges every shelved book (thickness and height), and with it the series name on the spine.
+const BOOK_SCALE = 1.15
+// Spines thinner than this can't hold a readable title, so no book goes below it (the
+// width "Year One" had when it was picked).
+const MIN_BOOK_THICKNESS = 0.05865
 
 // Every book is drawn from one instanced mesh, so this caps what a bookcase can show.
 export const MAX_BOOKS = 200
@@ -48,8 +53,11 @@ export function layoutBooks(
     if (instances.length >= MAX_BOOKS) break
     // a series shares one look (size and color), so its volumes match on the shelf
     const h = hash(book.seriesId ?? book.id)
-    const thickness = 0.03 + ((h >>> 3) % 26) / 1000 // 0.030–0.055
-    const height = 0.22 + ((h >>> 8) % 9) / 100 // 0.22–0.30
+    const thickness = Math.max(
+      MIN_BOOK_THICKNESS,
+      (0.03 + ((h >>> 3) % 26) / 1000) * BOOK_SCALE,
+    ) // 0.0587–0.063
+    const height = (0.22 + ((h >>> 8) % 9) / 100) * BOOK_SCALE // 0.25–0.35
     const depth = 0.16 + ((h >>> 13) % 5) / 100 // 0.16–0.20
 
     if (x + thickness > INNER_WIDTH / 2) {
