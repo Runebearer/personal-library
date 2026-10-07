@@ -91,7 +91,7 @@ export function AddBookModal({
       }
       setStep({ kind: 'confirm', metadata })
     } catch {
-      setStep({ kind: 'error', message: 'La recherche du livre a échoué. Réessayez.' })
+      setStep({ kind: 'error', message: 'La recherche du livre a échoué (service indisponible ou clé API refusée). Réessayez.' })
     }
   }
 

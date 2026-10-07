@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { RatingStars } from './RatingStars'
 import { GENRE_LIST } from '../lib/genre'
+import { formatIsbn } from '../lib/openLibrary'
 import { useSeries } from '../hooks/useSeries'
 import { ColorWheel } from './ColorWheel'
 import type { BookMetadata } from '../types'
@@ -131,6 +132,7 @@ export function BookDetailModal({
       }}
     >
       <div className="flex max-h-[90vh] w-full flex-col gap-3 overflow-y-auto rounded-t-2xl bg-white p-4 sm:max-w-sm sm:rounded-2xl">
+        <p className="font-mono text-xs text-gray-500">ISBN {formatIsbn(metadata.isbn)}</p>
         <div className="flex gap-3">
           <div className="h-28 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
             {metadata.coverUrl && (
