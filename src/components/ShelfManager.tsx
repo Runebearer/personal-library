@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState } from 'react'
 import { useShelves } from '../hooks/useShelves'
 import { ShelfCard } from './ShelfCard'
 import { GENRE_LIST } from '../lib/genre'
@@ -18,6 +18,18 @@ export function ShelfManager() {
   const [newShelfName, setNewShelfName] = useState('')
   const [newShelfMode, setNewShelfMode] = useState<ShelfMode>('custom')
   const [newShelfGenre, setNewShelfGenre] = useState(GENRE_LIST[0])
+  const [isGenreOpen, setIsGenreOpen] = useState(false)
+  const genreDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (genreDropdownRef.current && !genreDropdownRef.current.contains(e.target as Node)) {
+        setIsGenreOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   async function handleCreateShelf(e: FormEvent) {
     e.preventDefault()
@@ -61,17 +73,35 @@ export function ShelfManager() {
           ))}
         </div>
         {newShelfMode === 'genre' && (
-          <select
-            value={newShelfGenre}
-            onChange={(e) => setNewShelfGenre(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900"
-          >
-            {GENRE_LIST.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          <div className="relative" ref={genreDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsGenreOpen((open) => !open)}
+              className="flex w-full items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-left text-sm text-gray-900"
+            >
+              {newShelfGenre === 'à lire' && <span className="inline-block animate-spin">⭐</span>}
+              {newShelfGenre}
+            </button>
+            {isGenreOpen && (
+              <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-300 bg-white shadow-lg">
+                {GENRE_LIST.map((option) => (
+                  <li key={option}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewShelfGenre(option)
+                        setIsGenreOpen(false)
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100"
+                    >
+                      {option === 'à lire' && <span className="inline-block animate-spin">⭐</span>}
+                      {option}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
       </form>
 

@@ -1,4 +1,5 @@
 const GENRE_RULES: { genre: string; keywords: string[] }[] = [
+  { genre: 'à lire', keywords: [] },
   { genre: 'Fantasy', keywords: ['fantasy', 'fantastique', 'fantasy fiction'] },
   { genre: 'Horreur', keywords: ['horror', 'horreur', 'scary'] },
   { genre: 'Conte', keywords: ['fairy tale', 'tale', 'conte', 'legend'] },
