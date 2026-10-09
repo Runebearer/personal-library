@@ -7,6 +7,7 @@ import { LoginPage } from './pages/LoginPage'
 import { HomePage } from './pages/HomePage'
 import { LibraryPage } from './pages/LibraryPage'
 import { ShelfPage } from './pages/ShelfPage'
+import { PrivacyPage } from './pages/PrivacyPage'
 
 function MissingFirebaseConfig() {
   return (
@@ -74,6 +75,7 @@ export function App() {
               </RedirectIfAuthed>
             }
           />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route
             path="/"
             element={

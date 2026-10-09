@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { useLoginForm } from './useLoginForm'
 import { GoogleIcon } from './GoogleIcon'
 
@@ -21,6 +22,7 @@ function AltLoginBackground({ toggle, children }: { toggle: ReactNode; children:
 }
 
 export function AltLoginForm({ toggle }: { toggle: ReactNode }) {
+  const [isExpanded, setIsExpanded] = useState(false)
   const {
     mode,
     setMode,
@@ -84,12 +86,31 @@ export function AltLoginForm({ toggle }: { toggle: ReactNode }) {
   return (
     <AltLoginBackground toggle={toggle}>
       <div className={cardClass}>
-        <h1 className="text-center font-serif text-2xl font-semibold text-[#ede4d3]">
-          Personal Library
-        </h1>
+        <div className="flex flex-col items-center gap-2">
+          <h1 className="text-center font-serif text-2xl font-semibold text-[#ede4d3]">
+            Personal Library
+          </h1>
+          {!isExpanded && (
+            <button
+              type="button"
+              onClick={() => setIsExpanded(true)}
+              className="text-[#ede4d3]/40 transition hover:text-[#ede4d3]/60"
+              aria-label="Dépliez le formulaire"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+          )}
+        </div>
         <div className="mx-auto mt-3 h-px w-16 bg-[#ff7a33]" />
 
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
+        <div
+          className={`overflow-hidden transition-all duration-300 ${
+            isExpanded ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
           <input
             type="email"
             required
@@ -113,29 +134,43 @@ export function AltLoginForm({ toggle }: { toggle: ReactNode }) {
           </button>
         </form>
 
-        <button
-          type="button"
-          onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-          className="mt-4 w-full text-center text-sm text-[#ede4d3]/60"
-        >
-          {mode === 'signin' ? "Pas encore de compte ? S'inscrire" : 'Déjà un compte ? Se connecter'}
-        </button>
+          <button
+            type="button"
+            onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+            className="mt-4 w-full text-center text-sm text-[#ede4d3]/60"
+          >
+            {mode === 'signin' ? "Pas encore de compte ? S'inscrire" : 'Déjà un compte ? Se connecter'}
+          </button>
 
-        <div className="mt-5 flex items-center gap-3">
-          <div className="h-px flex-1 bg-[#6b4226]" />
-          <span className="text-xs text-[#ede4d3]/40">ou</span>
-          <div className="h-px flex-1 bg-[#6b4226]" />
+          <div className="mt-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-[#6b4226]" />
+            <span className="text-xs text-[#ede4d3]/40">ou</span>
+            <div className="h-px flex-1 bg-[#6b4226]" />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg border border-[#6b4226] bg-[#ede4d3] py-3 font-medium text-[#2e1c10] transition hover:bg-[#ded2ba] disabled:opacity-50"
+          >
+            <GoogleIcon />
+            Continuer avec Google
+          </button>
+
+          <p className="mt-4 text-center text-sm italic text-[#ede4d3]/70">
+            En vous connectant, vous acceptez notre politique de confidentialité
+          </p>
         </div>
+      </div>
 
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          disabled={loading}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg border border-[#6b4226] bg-[#ede4d3] py-3 font-medium text-[#2e1c10] transition hover:bg-[#ded2ba] disabled:opacity-50"
+      <div className="fixed bottom-6 left-0 right-0 flex justify-center">
+        <Link
+          to="/privacy"
+          className="rounded-lg bg-[#3d2817] px-4 py-2 text-sm font-medium text-[#ede4d3] transition hover:bg-[#4a3220]"
         >
-          <GoogleIcon />
-          Continuer avec Google
-        </button>
+          Politiques de confidentialité
+        </Link>
       </div>
     </AltLoginBackground>
   )
