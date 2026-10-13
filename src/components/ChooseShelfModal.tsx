@@ -23,9 +23,13 @@ export function ChooseShelfModal({
   const shelfId =
     choice ?? (shelves.some((s) => s.id === defaultShelfId) ? defaultShelfId : shelves[0]?.id)
   const shelf = shelves.find((s) => s.id === shelfId)
-  // A genre shelf only shows its genre: the book would be saved but invisible there
+  // A genre shelf only shows its genre: the book would be saved but invisible there.
+  // "à lire" tracks reading status, not genre, so it shows every book regardless of match.
   const hiddenByGenre =
-    shelf?.mode === 'genre' && !!shelf.genreFilter && shelf.genreFilter !== metadata.genre
+    shelf?.mode === 'genre' &&
+    !!shelf.genreFilter &&
+    shelf.genreFilter !== 'à lire' &&
+    shelf.genreFilter !== metadata.genre
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()

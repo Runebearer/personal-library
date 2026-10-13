@@ -33,7 +33,12 @@ function sortBooks(books: Book[], shelf: Shelf | null): BookGroup[] {
   }
 
   if (shelf.mode === 'genre') {
-    const filtered = shelf.genreFilter ? books.filter((b) => b.genre === shelf.genreFilter) : books
+    // "à lire" tracks reading status, not literary genre: it shows every book shelved here
+    // regardless of its own genre.
+    const filtered =
+      shelf.genreFilter && shelf.genreFilter !== 'à lire'
+        ? books.filter((b) => b.genre === shelf.genreFilter)
+        : books
     return [{ heading: null, books: filtered }]
   }
 
