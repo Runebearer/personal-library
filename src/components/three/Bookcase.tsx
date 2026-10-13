@@ -47,6 +47,12 @@ const TOME_SHARE = 0.22
 const NAME_SHARE_WITH_TOME = 0.74
 const TOME_CANVAS_WIDTH = 128
 
+// A collector book gets a small star badge right at the top tip of its spine, drawn above
+// everything else (a touch further out in z, like a sticker).
+const STAR_SHARE = 0.14
+const STAR_CANVAS_SIZE = 128
+const STAR_OFFSET = SPINE_OFFSET * 2
+
 // Tome is free text ("3", "Tome 3"): print just its number when there is one.
 function tomeLabel(tome: string | null) {
   return tome?.match(/\d+(?:[.,]\d+)?/)?.[0] ?? tome?.trim() ?? undefined
@@ -98,10 +104,50 @@ function SeriesSpines({ name, instances }: { name: string; instances: BookInstan
                 color={color}
               />
             )}
+            {b.book.collector && (
+              <CollectorStar
+                position={[
+                  b.position[0],
+                  b.position[1] + length / 2 - (length * STAR_SHARE) / 2,
+                  z + STAR_OFFSET,
+                ]}
+                length={length * STAR_SHARE}
+                width={width}
+              />
+            )}
           </group>
         )
       })}
     </>
+  )
+}
+
+function CollectorStar({
+  position,
+  length,
+  width,
+}: {
+  position: [number, number, number]
+  length: number
+  width: number
+}) {
+  const { invalidate } = useThree()
+  const texture = useTextTexture('⭐', {
+    width: STAR_CANVAS_SIZE,
+    height: STAR_CANVAS_SIZE,
+    color: '#d4af37',
+    fontSize: 96,
+    maxLines: 1,
+  })
+
+  useEffect(() => invalidate(), [texture, invalidate])
+  if (!texture) return null
+
+  return (
+    <mesh position={position} rotation={[0, 0, Math.PI / 2]} raycast={() => null}>
+      <planeGeometry args={[length, width]} />
+      <meshBasicMaterial map={texture} transparent />
+    </mesh>
   )
 }
 

@@ -43,6 +43,16 @@ export function BookCard({
           <RatingStars rating={book.rating} size="sm" />
         </div>
       </button>
+      {book.collector && (
+        <span
+          aria-hidden
+          className={`pointer-events-none absolute top-1 z-10 text-base drop-shadow ${
+            onDelete ? 'right-8' : 'right-1'
+          }`}
+        >
+          ⭐
+        </span>
+      )}
       {onDelete && (
         <button
           type="button"

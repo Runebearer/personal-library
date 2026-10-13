@@ -109,6 +109,8 @@ export function AddBookModal({
         genre: null,
         synopsis: null,
         rating: 0,
+        dedicated: false,
+        collector: false,
       },
     })
   }

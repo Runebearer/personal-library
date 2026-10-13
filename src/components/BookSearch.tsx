@@ -88,6 +88,8 @@ export function BookSearch() {
       genre: metadata.genre,
       synopsis: metadata.synopsis,
       rating: metadata.rating,
+      dedicated: metadata.dedicated,
+      collector: metadata.collector,
     }
     await updateBook(user.uid, shelfId, book.id, patch)
     // keep the card in sync without searching again

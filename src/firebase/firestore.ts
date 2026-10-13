@@ -107,6 +107,8 @@ function toBook(d: QueryDocumentSnapshot): Book {
     genre: (data.genre as string | null) ?? null,
     synopsis: (data.synopsis as string | null) ?? null,
     rating: (data.rating as number) ?? 0,
+    dedicated: (data.dedicated as boolean) ?? false,
+    collector: (data.collector as boolean) ?? false,
     addedAt: (data.addedAt as Timestamp | null)?.toMillis() ?? 0,
   }
 }
@@ -145,7 +147,16 @@ export function updateBook(
   patch: Partial<
     Pick<
       Book,
-      'title' | 'subtitle' | 'tome' | 'seriesId' | 'authors' | 'genre' | 'synopsis' | 'rating'
+      | 'title'
+      | 'subtitle'
+      | 'tome'
+      | 'seriesId'
+      | 'authors'
+      | 'genre'
+      | 'synopsis'
+      | 'rating'
+      | 'dedicated'
+      | 'collector'
     >
   >,
 ) {
@@ -179,6 +190,8 @@ export async function moveBook(
     genre: data.genre,
     synopsis: data.synopsis,
     rating: data.rating,
+    dedicated: data.dedicated ?? false,
+    collector: data.collector ?? false,
     addedAt: serverTimestamp(),
   })
   batch.delete(fromRef)

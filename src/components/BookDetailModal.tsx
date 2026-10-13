@@ -57,6 +57,8 @@ export function BookDetailModal({
   const [genre, setGenre] = useState(metadata.genre ?? '')
   const [synopsis, setSynopsis] = useState(metadata.synopsis ?? '')
   const [rating, setRating] = useState(metadata.rating)
+  const [dedicated, setDedicated] = useState(metadata.dedicated)
+  const [collector, setCollector] = useState(metadata.collector)
   const [error, setError] = useState<string | null>(null)
   const pressedBackdrop = useRef(false)
 
@@ -76,8 +78,8 @@ export function BookDetailModal({
     setSeriesChoice(value)
     setColorEdit(undefined)
     setShowWheel(false)
-    // a book in a series usually has a volume number: offer the field right away
-    if (value && value !== NEW_SERIES) setShowTome(true)
+    // a book in a series requires a volume number: offer the field right away
+    if (value) setShowTome(true)
   }
 
   function chooseSeries(value: string) {
@@ -137,6 +139,10 @@ export function BookDetailModal({
       setError('Donne un nom à la nouvelle série.')
       return
     }
+    if (seriesChoice && !tome.trim()) {
+      setError('Le tome est obligatoire pour un livre faisant partie d\'une série.')
+      return
+    }
 
     setSaving(true)
     let seriesId: string | null
@@ -166,6 +172,8 @@ export function BookDetailModal({
       genre,
       synopsis: synopsis.trim() || null,
       rating,
+      dedicated,
+      collector,
     })
   }
 
@@ -179,7 +187,40 @@ export function BookDetailModal({
         if (pressedBackdrop.current && e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="flex max-h-[90vh] w-full flex-col gap-3 overflow-y-auto rounded-t-2xl bg-white p-4 sm:max-w-sm sm:rounded-2xl">
+      <div
+        className={`relative flex max-h-[90vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white sm:max-w-sm sm:rounded-2xl ${
+          collector
+            ? 'ring-[3px] ring-inset ring-[#d4af37] shadow-[inset_0_0_24px_6px_rgba(212,175,55,0.55)]'
+            : ''
+        }`}
+      >
+        {dedicated && (
+          <svg
+            aria-hidden
+            viewBox="0 0 320 420"
+            preserveAspectRatio="xMidYMid slice"
+            className="pointer-events-none absolute inset-0 z-0 h-full w-full select-none"
+          >
+            <text
+              x="160"
+              y="210"
+              textAnchor="middle"
+              transform="rotate(-18 160 210)"
+              fontFamily="'Segoe Script', 'Brush Script MT', cursive"
+              fontSize="46"
+              fill="#111827"
+              fillOpacity="0.1"
+            >
+              dedicace
+            </text>
+          </svg>
+        )}
+        {collector && (
+          <span aria-hidden className="pointer-events-none absolute right-3 top-3 z-20 text-xl">
+            ⭐
+          </span>
+        )}
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
         <p className="font-mono text-xs text-gray-500">ISBN {formatIsbn(metadata.isbn)}</p>
         <div className="flex gap-3">
           <div className="h-28 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
@@ -225,8 +266,12 @@ export function BookDetailModal({
                 autoFocus
                 value={tome}
                 onChange={(e) => setTome(e.target.value)}
-                placeholder="Tome (ex. 3)"
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700"
+                placeholder={seriesChoice ? 'Tome (ex. 3) *' : 'Tome (ex. 3)'}
+                className={`rounded-lg border px-3 py-2 text-sm text-gray-700 ${
+                  seriesChoice && !tome.trim()
+                    ? 'border-amber-400 bg-amber-50 ring-2 ring-amber-200'
+                    : 'border-gray-300'
+                }`}
               />
             ) : (
               <button
@@ -461,6 +506,27 @@ export function BookDetailModal({
           <RatingStars rating={rating} onChange={setRating} />
         </div>
 
+        <div className="flex flex-col gap-2 text-sm text-gray-600">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={dedicated}
+              onChange={(e) => setDedicated(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            Dédicacé
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={collector}
+              onChange={(e) => setCollector(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            Collector
+          </label>
+        </div>
+
         {error && <p className="text-center text-sm text-red-600">{error}</p>}
 
         <button
@@ -529,6 +595,7 @@ export function BookDetailModal({
             )}
           </div>
         )}
+        </div>
       </div>
     </div>
   )

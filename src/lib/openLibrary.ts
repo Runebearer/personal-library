@@ -117,6 +117,8 @@ async function fetchFromOpenLibrary(isbn: string): Promise<BookMetadata | null> 
     genre: normalizeGenre(edition.subjects ?? work?.subjects ?? []),
     synopsis: readText(edition.description) ?? readText(work?.description) ?? readText(edition.notes),
     rating: 0,
+    dedicated: false,
+    collector: false,
   }
 }
 
@@ -141,6 +143,8 @@ async function fetchFromGoogleBooks(isbn: string): Promise<BookMetadata | null> 
     genre: normalizeGenre(info.categories ?? []),
     synopsis: info.description ?? null,
     rating: 0,
+    dedicated: false,
+    collector: false,
   }
 }
 
@@ -196,6 +200,8 @@ async function fetchFromBnf(isbn: string): Promise<BookMetadata | null> {
     genre: normalizeGenre([]),
     synopsis: sub(field('330')[0], 'a'),
     rating: 0,
+    dedicated: false,
+    collector: false,
   }
 }
 
@@ -227,10 +233,12 @@ async function fetchFromOpenLibrarySearch(isbn: string): Promise<BookMetadata | 
     genre: normalizeGenre(doc.subject ?? []),
     synopsis: null,
     rating: 0,
+    dedicated: false,
+    collector: false,
   }
 }
 
-/** Resolves to null only when every source answered "not found"; throws if a source failed and none found it. */
+/** Resolves to null as soon as one source gives a definitive "not found"; throws only if every source failed. */
 export async function fetchBookByIsbn(isbn: string): Promise<BookMetadata | null> {
   const failures = { count: 0 }
   const sources = [fetchFromOpenLibrary, fetchFromBnf, fetchFromOpenLibrarySearch, fetchFromGoogleBooks]
@@ -240,6 +248,6 @@ export async function fetchBookByIsbn(isbn: string): Promise<BookMetadata | null
     if (book) return book
   }
 
-  if (failures.count > 0) throw new LookupError('Lookup sources failed')
+  if (failures.count === sources.length) throw new LookupError('Lookup sources failed')
   return null
 }

@@ -98,6 +98,8 @@ export function useShelfBooks(shelfId: string | undefined, preview?: ShelfPrevie
       genre: metadata.genre,
       synopsis: metadata.synopsis,
       rating: metadata.rating,
+      dedicated: metadata.dedicated,
+      collector: metadata.collector,
     })
   }
 

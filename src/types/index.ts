@@ -29,6 +29,8 @@ export interface Book {
   genre: string | null
   synopsis: string | null
   rating: number
+  dedicated: boolean
+  collector: boolean
   addedAt: number
 }
 
@@ -43,4 +45,6 @@ export interface BookMetadata {
   genre: string | null
   synopsis: string | null
   rating: number
+  dedicated: boolean
+  collector: boolean
 }
