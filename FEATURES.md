@@ -58,6 +58,8 @@
   - Série (optionnelle, révélée via bouton « + Série » : choisir une série existante ou en créer une)
   - Couleur de la série (roue chromatique, ou « Par défaut » pour la couleur du thème)
   - Note (0 à 5 étoiles)
+  - Dédicacé (case à cocher, optionnel) : fait apparaître une fausse signature « dedicace » en filigrane sur la fiche
+  - Collector (case à cocher, optionnel) : entoure la fiche d'un contour doré et affiche une étoile ⭐ en haut à droite
 - Message d'erreur si titre / auteur / genre manquant à la validation
 - Modification d'un livre existant (mêmes champs que l'ajout)
 - Suppression d'un livre (avec confirmation dans la fiche)
@@ -76,6 +78,7 @@
 ## Apparence
 - Interface mobile-first (cartes, modales pleine largeur en bas d'écran sur mobile, centrées sur desktop)
 - Cartes livre avec couverture, titre, auteur(s), badge de genre, étoiles
+- Étoile ⭐ en haut à droite des livres marqués « Collector » (carte en vue classique, tout en haut de la tranche en vue 3D)
 - Icône livre par défaut (📖) si aucune couverture disponible
 - Design épuré en niveaux de gris (Tailwind CSS) en vue classique ; ambiance bois/pierre/bougies en 3D et sur la page de connexion alternative
 - Application installable (PWA)
